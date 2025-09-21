@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sanctra-orchestrator-app"
+version = "0.1.0"
+description = "Orchestrates the Sanctra AI avatar pipeline."
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.112.0",
+  "uvicorn[standard]>=0.30.0",
+  "pydantic>=2.7.0",
+  "httpx>=0.27.0",
+  "google-cloud-storage>=2.17.0",
+  "google-generativeai>=0.7.0",
+  "websockets>=12.0",
+  "python-dotenv>=1.0.1"
+]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "UP"]
