@@ -1,11 +1,19 @@
 ﻿name: CI
-on: [push, pull_request]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
 permissions:
   id-token: write
   contents: read
+
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
+    concurrency:
+      group: orchestrator-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
 
@@ -21,15 +29,17 @@ jobs:
 
       - run: gcloud --quiet auth configure-docker us-central1-docker.pkg.dev
 
-      - name: Build and push
+      - name: Build and push image
         run: |
           IMAGE=us-central1-docker.pkg.dev/sanctra/sanctra-docker/sanctra-orchestrator:${{ github.sha }}
           docker build -t $IMAGE .
           docker push $IMAGE
 
-      - name: Deploy
+      - name: Deploy to Cloud Run
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           gcloud run deploy sanctra-orchestrator \
             --image=us-central1-docker.pkg.dev/sanctra/sanctra-docker/sanctra-orchestrator:${{ github.sha }} \
             --region=us-central1 \
+            --platform=managed \
             --allow-unauthenticated
