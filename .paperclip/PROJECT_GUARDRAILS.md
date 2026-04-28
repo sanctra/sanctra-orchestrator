@@ -8,3 +8,6 @@ Paperclip/autonomous agents must:
 - If blocked by missing secrets, private data, content-safety concerns, or unclear ownership: stop, leave a short note/status, and work on another task instead of clobbering local work.
 - Prefer small branches/commits and avoid rewriting operator work in progress.
 - For sensitive-content projects, treat config/persona/prompt/data files as private unless explicitly approved.
+
+## Git revision hygiene
+Follow `.paperclip/GIT_REVISION_HYGIENE.md` before committing, pushing, or opening PRs. If local dirty state is unrelated or sensitive, stop and report instead of overwriting it.
