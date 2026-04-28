@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.py[cod]
 *.pyo
@@ -23,3 +23,84 @@ Thumbs.db
 
 # Docker artifacts
 *.tar
+
+# Local package-authoring data
+.sanctra-package-store/
+
+# OpenClaw/Paperclip safety baseline
+.env
+.env.*
+!.env.example
+*.env
+*.pem
+*.key
+*.p8
+*.p12
+*.crt
+*.cert
+*.secret
+*secret*
+*credentials*
+*token*
+*.bak-*
+*.backup
+*.tmp
+*.log
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+ENV/
+
+# Node/npm
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/cache/
+.next/
+dist/
+build/
+coverage/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+.idea/
+
+# Model/media/datasets: keep out unless explicitly approved
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.gguf
+*.bin
+*.wav
+*.mp3
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.rar
+artifacts/
+outputs/
+cache/
+.cache/
+data/private/
+datasets/private/

@@ -1,4 +1,4 @@
-﻿# sanctra-orchestrator
+# sanctra-orchestrator
 
 Cloud Run service written in Python FastAPI. Entry point for sessions.
 Pipeline: STT -> RAG -> Gemini Live -> ElevenLabs TTS -> SadTalker avatar.
@@ -26,6 +26,11 @@ make push
 - POST /session/start
 - POST /turn/text (planned)
 - WS   /turn/stream (planned)
+- POST /packages
+- GET  /packages/{package_id}
+- PUT  /packages/{package_id}
+- POST /packages/{package_id}/authority-preflight
+- POST /packages/{package_id}/artifact-manifests
 
 ## Secrets (GitHub)
 
@@ -33,3 +38,7 @@ make push
 - ELEVENLABS_API_KEY
 - GEMINI_API_KEY
 - GCS_SERVICE_ACCOUNT_JSON
+
+## Async package authoring scaffold
+
+The `/packages` endpoints provide the first consultant-led async memorial package authoring seam. Package bundles use Sanctra-native ids, are stored as JSON under `SANCTRA_PACKAGE_STORE_DIR` (default: system temp outside the source repo), and keep generated media/model artifacts as external storage references only. Voice/video artifact preflight requires accepted or limited authority records for the requested likeness use.
