@@ -72,6 +72,11 @@ Issue: CON-123
 ## GCP deploy guardrail
 For Sanctra, do not re-enable automatic GitHub Actions push/deploy to GCP. Current direction is headless auth / impersonation accounts. GitHub Actions may run build/test checks, but automatic `google-github-actions/auth`, `gcloud`, `gsutil`, `docker push`, Terraform apply, or Cloud Run deploy requires explicit operator approval.
 
+## Nested vendor/upstream repos
+- Nested third-party repositories are pull-only/vendor checkouts unless explicitly assigned as owned work.
+- Example: `/host/repos/Textloom/DMPO` is someone else's upstream Git repo (`swt-user/DMPO`) and is excluded from Textloom Git operations via `/DMPO/` in Textloom root `.gitignore`.
+- Do not add Paperclip guardrail commits, project snapshots, or private GitHub remotes inside third-party upstream repos. Pull/fetch them separately and preserve any local dirty state before reset/update.
+
 ## Sensitive project notes
 - Textloom may contain adult/private configs or datasets. Do not upload config/data directories or dataset artifacts to GitHub unless explicitly approved.
 - Voice/video/persona projects may contain private likeness/audio/video data. Keep generated media, source samples, model weights, and persona datasets out of Git by default.
