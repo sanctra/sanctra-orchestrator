@@ -10,6 +10,15 @@ from .validation import (
     validate_bundle,
     validate_manifest_write,
 )
+from .voice_artifacts import (
+    FakeVoiceArtifactJobClient,
+    build_voice_job_request,
+    find_voice_request,
+    mark_manifest_received,
+    package_voice_request_record,
+    upsert_voice_request,
+    validate_voice_manifest_import,
+)
 
 
 class PackageAuthoringService:
@@ -51,6 +60,39 @@ class PackageAuthoringService:
         return {
             "manifest_id": validated_manifest["manifest_id"],
             "artifact_status": validated_manifest.get("artifact_status", "planned"),
+        }
+
+    def submit_voice_artifact_request(
+        self, package_id: str, request_id: str, request: dict, preflight: dict | None = None
+    ) -> dict:
+        bundle = self.get(package_id)["bundle"]
+        request = dict(request)
+        request.setdefault("package_id", package_id)
+        request.setdefault("request_id", request_id)
+        if request["package_id"] != package_id or request["request_id"] != request_id:
+            raise HTTPException(status_code=409, detail="voice artifact request path/body mismatch")
+        job_request = build_voice_job_request(bundle, request, preflight)
+        submission = FakeVoiceArtifactJobClient().submit(job_request)
+        record = package_voice_request_record(request, job_request, submission)
+        updated = upsert_voice_request(bundle, record)
+        self.store.write(package_id, updated)
+        return {"request": record, "job_request": job_request}
+
+    def get_voice_artifact_request(self, package_id: str, request_id: str) -> dict:
+        bundle = self.get(package_id)["bundle"]
+        return find_voice_request(bundle, request_id)
+
+    def import_voice_artifact_manifest(self, package_id: str, request_id: str, manifest: dict) -> dict:
+        bundle = self.get(package_id)["bundle"]
+        validated_voice_manifest = validate_voice_manifest_import(bundle, request_id, manifest)
+        validated_manifest = validate_manifest_write(bundle, validated_voice_manifest)
+        updated = upsert_manifest(bundle, validated_manifest)
+        updated = mark_manifest_received(updated, request_id, validated_manifest["manifest_id"])
+        self.store.write(package_id, updated)
+        return {
+            "request_id": request_id,
+            "manifest_id": validated_manifest["manifest_id"],
+            "status": "manifest_received",
         }
 
     @staticmethod

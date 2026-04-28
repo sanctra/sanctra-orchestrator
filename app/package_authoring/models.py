@@ -27,3 +27,12 @@ class AuthorityPreflightResponse(BaseModel):
 
 class ArtifactManifestRequest(BaseModel):
     manifest: dict
+
+
+class VoiceArtifactSubmitRequest(BaseModel):
+    request: dict = Field(default_factory=dict)
+    preflight: dict | None = None
+
+
+class VoiceArtifactManifestImportRequest(BaseModel):
+    manifest: dict

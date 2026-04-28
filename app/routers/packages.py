@@ -8,6 +8,8 @@ from app.package_authoring.models import (
     AuthorityPreflightResponse,
     PackageCreateRequest,
     PackageReplaceRequest,
+    VoiceArtifactManifestImportRequest,
+    VoiceArtifactSubmitRequest,
 )
 from app.package_authoring.service import PackageAuthoringService
 
@@ -46,3 +48,24 @@ def package_authority_preflight(package_id: str, request: AuthorityPreflightRequ
 @router.post("/packages/{package_id}/artifact-manifests")
 def write_artifact_manifest(package_id: str, request: ArtifactManifestRequest) -> dict:
     return service().write_manifest(package_id, request.manifest)
+
+
+@router.post("/packages/{package_id}/voice-artifact-requests/{request_id}/submit")
+def submit_voice_artifact_request(
+    package_id: str, request_id: str, request: VoiceArtifactSubmitRequest
+) -> dict:
+    return service().submit_voice_artifact_request(
+        package_id, request_id, request.request, request.preflight
+    )
+
+
+@router.get("/packages/{package_id}/voice-artifact-requests/{request_id}")
+def get_voice_artifact_request(package_id: str, request_id: str) -> dict:
+    return service().get_voice_artifact_request(package_id, request_id)
+
+
+@router.post("/packages/{package_id}/voice-artifact-requests/{request_id}/manifest")
+def import_voice_artifact_manifest(
+    package_id: str, request_id: str, request: VoiceArtifactManifestImportRequest
+) -> dict:
+    return service().import_voice_artifact_manifest(package_id, request_id, request.manifest)
