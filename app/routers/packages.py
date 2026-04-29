@@ -9,6 +9,7 @@ from app.package_authoring.models import (
     PackageCreateRequest,
     PackageReplaceRequest,
     VoiceArtifactManifestImportRequest,
+    VoiceArtifactMasteringReportRequest,
     VoiceArtifactSubmitRequest,
 )
 from app.package_authoring.service import PackageAuthoringService
@@ -69,3 +70,10 @@ def import_voice_artifact_manifest(
     package_id: str, request_id: str, request: VoiceArtifactManifestImportRequest
 ) -> dict:
     return service().import_voice_artifact_manifest(package_id, request_id, request.manifest)
+
+
+@router.post("/packages/{package_id}/voice-artifact-requests/{request_id}/mastering-report")
+def write_voice_artifact_mastering_report(
+    package_id: str, request_id: str, request: VoiceArtifactMasteringReportRequest
+) -> dict:
+    return service().write_voice_artifact_mastering_report(package_id, request_id, request.report)

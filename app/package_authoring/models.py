@@ -36,3 +36,7 @@ class VoiceArtifactSubmitRequest(BaseModel):
 
 class VoiceArtifactManifestImportRequest(BaseModel):
     manifest: dict
+
+
+class VoiceArtifactMasteringReportRequest(BaseModel):
+    report: dict = Field(default_factory=dict)

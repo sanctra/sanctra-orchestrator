@@ -158,6 +158,113 @@ def main() -> None:
         "status": "manifest_received",
     }
 
+    base_mastering_report = {
+        "report_id": "mastering:private_message_pass_001",
+        "manifest_id": "manifest:runtime_private_voice_imported_001",
+        "voice_job_ref": submitted["request"]["voice_job_ref"],
+        "chunk_outcomes": [
+            {"chunk_id": "chunk:private_message_001", "outcome": "pass"},
+            {"chunk_id": "chunk:private_message_002", "outcome": "pass"},
+        ],
+        "audio_targets": {
+            "loudness_target_lufs": -16.0,
+            "integrated_loudness_lufs": -16.2,
+            "loudness_tolerance_lufs": 1.0,
+            "true_peak_ceiling_dbtp": -1.0,
+            "measured_true_peak_dbtp": -1.4,
+            "expected_sample_rate_hz": 48000,
+            "sample_rate_hz": 48000,
+            "expected_channels": 1,
+            "channels": 1,
+            "clipping_detected": False,
+            "silence_trim": {"leading_ms": 80, "trailing_ms": 120, "max_internal_silence_ms": 900},
+            "unexpected_long_silences": [],
+            "seam_artifact_checks": [{"seam_id": "seam:private_message_001_002", "outcome": "pass"}],
+        },
+        "final_artifact_uris": [
+            "gcs://sanctra-voice-artifacts/packages/package-maria-ellis-async-001/private-message-v1.wav",
+            "gcs://sanctra-voice-artifacts/packages/package-maria-ellis-async-001/private-message-v1.mp3",
+        ],
+        "final_outcome": "pass",
+        "review_required": True,
+    }
+    mastering_pass = assert_status(
+        client.post(
+            f"/packages/{package_id}/voice-artifact-requests/{voice_request_id}/mastering-report",
+            json={"report": base_mastering_report},
+        ),
+        200,
+    )
+    assert mastering_pass == {
+        "request_id": voice_request_id,
+        "report_id": "mastering:private_message_pass_001",
+        "manifest_id": "manifest:runtime_private_voice_imported_001",
+        "final_outcome": "pass",
+        "mastering_report_uri": "gcs://sanctra-voice-artifacts/packages/package-maria-ellis-async-001/reports/final/mastering_report.json",
+    }
+    fetched_after_mastering = assert_status(client.get(f"/packages/{package_id}"), 200)
+    mastered_manifest = {
+        item["manifest_id"]: item for item in fetched_after_mastering["bundle"]["artifact_manifests"]
+    }["manifest:runtime_private_voice_imported_001"]
+    assert mastered_manifest["mastering_report_uri"] == mastering_pass["mastering_report_uri"]
+    assert fetched_after_mastering["bundle"]["mastering_reports"][0]["final_outcome"] == "pass"
+
+    warn_report = deepcopy(base_mastering_report)
+    warn_report["report_id"] = "mastering:private_message_warn_001"
+    warn_report["chunk_outcomes"][1]["outcome"] = "warn"
+    warn_report["chunk_outcomes"][1]["warnings"] = ["minor breath noise retained"]
+    warn_report["final_outcome"] = "warn"
+    assert_status(
+        client.post(
+            f"/packages/{package_id}/voice-artifact-requests/{voice_request_id}/mastering-report",
+            json={"report": warn_report},
+        ),
+        200,
+    )["final_outcome"] == "warn"
+
+    fail_report = deepcopy(base_mastering_report)
+    fail_report["report_id"] = "mastering:private_message_fail_001"
+    fail_report["chunk_outcomes"][0]["outcome"] = "fail"
+    fail_report["final_outcome"] = "fail"
+    assert_status(
+        client.post(
+            f"/packages/{package_id}/voice-artifact-requests/{voice_request_id}/mastering-report",
+            json={"report": fail_report},
+        ),
+        200,
+    )["final_outcome"] == "fail"
+
+    clipping_violation = deepcopy(base_mastering_report)
+    clipping_violation["report_id"] = "mastering:private_message_bad_peak_001"
+    clipping_violation["audio_targets"]["measured_true_peak_dbtp"] = -0.2
+    clipping_violation["audio_targets"]["clipping_detected"] = True
+    clipping_violation["final_outcome"] = "pass"
+    assert_status(
+        client.post(
+            f"/packages/{package_id}/voice-artifact-requests/{voice_request_id}/mastering-report",
+            json={"report": clipping_violation},
+        ),
+        400,
+    )
+
+    delivery_without_mastering = deepcopy(voice_manifest)
+    delivery_without_mastering["manifest_id"] = "manifest:runtime_delivery_without_mastering_001"
+    delivery_without_mastering["artifact_status"] = "delivered"
+    delivery_without_mastering["outputs"][0]["artifact_id"] = "artifact:runtime_delivery_without_mastering_mp3_001"
+    delivery_without_mastering["human_review"] = {
+        "review_required": True,
+        "state": "approved",
+        "reviewer_ref": "stakeholder:consultant_01",
+        "reviewer_identity_ref": "staff_contact:consultant_01",
+        "decided_at": "2026-04-29T13:00:00Z",
+        "notes": "Review passed, but mastering link was not attached.",
+        "quality_gate_refs": ["gate:voice_clone_private_001"],
+        "qa_report_refs": ["voice-qa:private-message-pass-001"],
+        "mastering_report_refs": ["mastering:private-message-pass-001"],
+        "review_decision_refs": [],
+    }
+    assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": delivery_without_mastering}), 403)
+
     pending_delivery = deepcopy(voice_manifest)
     pending_delivery["manifest_id"] = "manifest:runtime_pending_delivery_001"
     pending_delivery["artifact_status"] = "delivered"
@@ -184,6 +291,7 @@ def main() -> None:
             "notes": "QA and mastering reports reviewed; approved for private family delivery.",
         }
     )
+    approved_delivery["mastering_report_uri"] = mastering_pass["mastering_report_uri"]
     approved = assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": approved_delivery}), 200)
     assert approved == {"manifest_id": "manifest:runtime_approved_delivery_001", "artifact_status": "delivered"}
 

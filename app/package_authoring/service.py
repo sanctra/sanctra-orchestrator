@@ -12,10 +12,12 @@ from .validation import (
 )
 from .voice_artifacts import (
     FakeVoiceArtifactJobClient,
+    build_mastering_report,
     build_voice_job_request,
     find_voice_request,
     mark_manifest_received,
     package_voice_request_record,
+    store_mastering_report,
     upsert_voice_request,
     validate_voice_manifest_import,
 )
@@ -93,6 +95,19 @@ class PackageAuthoringService:
             "request_id": request_id,
             "manifest_id": validated_manifest["manifest_id"],
             "status": "manifest_received",
+        }
+
+    def write_voice_artifact_mastering_report(self, package_id: str, request_id: str, report: dict) -> dict:
+        bundle = self.get(package_id)["bundle"]
+        mastering_report = build_mastering_report(bundle, request_id, report)
+        updated = store_mastering_report(bundle, request_id, mastering_report)
+        self.store.write(package_id, updated)
+        return {
+            "request_id": request_id,
+            "report_id": mastering_report["report_id"],
+            "manifest_id": mastering_report["manifest_id"],
+            "final_outcome": mastering_report["final_outcome"],
+            "mastering_report_uri": mastering_report["report_uri"],
         }
 
     @staticmethod

@@ -12,6 +12,7 @@ from fastapi import HTTPException
 from .validation import ID_PATTERN, authority_preflight, raise_validation, validate_ids_and_leakage
 
 VOICE_CONTRACT_VERSION = "1.0.0"
+MASTERING_REPORT_VERSION = "1.0.0"
 REPO_LOCAL_PREFIXES = (
     "/host/repos/",
     "file:///host/repos/",
@@ -269,6 +270,102 @@ def mark_manifest_received(bundle: dict[str, Any], request_id: str, manifest_id:
     return updated
 
 
+def build_mastering_report(bundle: dict[str, Any], request_id: str, report: dict[str, Any]) -> dict[str, Any]:
+    request = find_voice_request(bundle, request_id)
+    if not isinstance(report, dict):
+        raise_validation("mastering report must be a JSON object")
+    validate_ids_and_leakage(report, "mastering_report")
+    reject_local_or_embedded_artifacts(report, "mastering_report")
+
+    report_id = _require_id(report.get("report_id"), "report_id")
+    manifest_id = _require_id(report.get("manifest_id") or request.get("artifact_manifest_ref") or request.get("expected_manifest_slot"), "manifest_id")
+    voice_job_ref = _require_id(report.get("voice_job_ref") or request.get("voice_job_ref"), "voice_job_ref")
+    if voice_job_ref != request.get("voice_job_ref"):
+        raise_validation("mastering report voice_job_ref does not match request")
+
+    chunk_outcomes = _validate_chunk_outcomes(report.get("chunk_outcomes"))
+    audio_targets = _validate_audio_targets(report.get("audio_targets") or {})
+    final_artifact_uris = _validate_final_artifact_uris(report.get("final_artifact_uris"))
+    final_outcome = _derive_mastering_outcome(chunk_outcomes, audio_targets)
+    if report.get("final_outcome") and report["final_outcome"] != final_outcome:
+        raise_validation("mastering report final_outcome does not match chunk/audio checks")
+
+    report_uri = report.get("report_uri") or _default_mastering_report_uri(request, final_artifact_uris)
+    validate_external_target_root(report_uri)
+
+    return {
+        "contract_version": MASTERING_REPORT_VERSION,
+        "report_id": report_id,
+        "report_uri": report_uri,
+        "request_id": request_id,
+        "package_id": request["package_id"],
+        "manifest_id": manifest_id,
+        "voice_job_ref": voice_job_ref,
+        "chunk_outcomes": chunk_outcomes,
+        "final_outcome": final_outcome,
+        "loudness_target": audio_targets["loudness_target"],
+        "peak_ceiling": audio_targets["peak_ceiling"],
+        "silence_trim": audio_targets["silence_trim"],
+        "seam_artifact_checks": audio_targets["seam_artifact_checks"],
+        "sample_rate_channel_conformity": audio_targets["sample_rate_channel_conformity"],
+        "clipping": audio_targets["clipping"],
+        "final_artifact_uris": final_artifact_uris,
+        "disclosure_required": True,
+        "disclosure_label": request.get("consent_ref") and (report.get("disclosure_label") or "Generated voice memorial artifact; disclosure required."),
+        "review_required": bool(report.get("review_required", True)),
+        "created_at": report.get("created_at") or _now(),
+    }
+
+
+def store_mastering_report(bundle: dict[str, Any], request_id: str, report: dict[str, Any]) -> dict[str, Any]:
+    updated = dict(bundle)
+    reports = list(updated.get("mastering_reports", []))
+    for idx, existing in enumerate(reports):
+        if existing.get("report_id") == report["report_id"]:
+            reports[idx] = report
+            break
+    else:
+        reports.append(report)
+    updated["mastering_reports"] = reports
+
+    manifests = []
+    manifest_found = False
+    for manifest in updated.get("artifact_manifests", []):
+        if manifest.get("manifest_id") == report["manifest_id"]:
+            manifest = dict(manifest)
+            manifest["mastering_report_uri"] = report["report_uri"]
+            review = dict(manifest.get("human_review") or {})
+            mastering_refs = list(review.get("mastering_report_refs") or [])
+            if report["report_id"] not in mastering_refs:
+                mastering_refs.append(report["report_id"])
+            if review:
+                review["mastering_report_refs"] = mastering_refs
+                manifest["human_review"] = review
+            manifest_found = True
+        manifests.append(manifest)
+    if not manifest_found:
+        raise_validation("mastering report manifest_id does not match an artifact manifest")
+    updated["artifact_manifests"] = manifests
+
+    requests = []
+    request_found = False
+    for request in updated.get("voice_artifact_requests", []):
+        if request.get("request_id") == request_id:
+            request = dict(request)
+            request["mastering_report_ref"] = report["report_id"]
+            request["mastering_report_uri"] = report["report_uri"]
+            request["status"] = f"mastering_{report['final_outcome']}"
+            request["updated_at"] = _now()
+            request_found = True
+        requests.append(request)
+    if not request_found:
+        raise_validation("unknown voice artifact request for mastering report")
+    updated["voice_artifact_requests"] = requests
+    validate_ids_and_leakage(updated, "bundle")
+    reject_local_or_embedded_artifacts(updated.get("mastering_reports", []), "bundle.mastering_reports")
+    return updated
+
+
 def normalize_use_case(value: Any) -> str:
     mapping = {
         "private_voice_message": "memorial_private_audio",
@@ -330,6 +427,114 @@ def validate_voice_job_request(request: dict[str, Any]) -> None:
         raise_validation("voice job request requires consent and disclosure metadata")
     reject_local_or_embedded_artifacts(request, "voice_job_request")
     validate_ids_and_leakage(request, "voice_job_request")
+
+
+def _validate_chunk_outcomes(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list) or not value:
+        raise_validation("mastering report chunk_outcomes must be a non-empty array")
+    chunks: list[dict[str, Any]] = []
+    for idx, chunk in enumerate(value):
+        if not isinstance(chunk, dict):
+            raise_validation("mastering report chunk_outcomes entries must be objects")
+        chunk_id = _require_id(chunk.get("chunk_id"), f"chunk_outcomes[{idx}].chunk_id")
+        outcome = chunk.get("outcome")
+        if outcome not in {"pass", "warn", "fail"}:
+            raise_validation("chunk outcome must be pass, warn, or fail")
+        chunks.append({"chunk_id": chunk_id, "outcome": outcome, "warnings": list(chunk.get("warnings") or []), "artifact_uri": chunk.get("artifact_uri")})
+    return chunks
+
+
+def _validate_audio_targets(value: dict[str, Any]) -> dict[str, Any]:
+    required = {
+        "loudness_target_lufs",
+        "integrated_loudness_lufs",
+        "true_peak_ceiling_dbtp",
+        "measured_true_peak_dbtp",
+        "expected_sample_rate_hz",
+        "sample_rate_hz",
+        "expected_channels",
+        "channels",
+    }
+    missing = sorted(key for key in required if key not in value)
+    if missing:
+        raise_validation(f"mastering report audio_targets missing {missing}")
+    tolerance = float(value.get("loudness_tolerance_lufs", 1.0))
+    loudness_delta = abs(float(value["integrated_loudness_lufs"]) - float(value["loudness_target_lufs"]))
+    peak_violation = float(value["measured_true_peak_dbtp"]) > float(value["true_peak_ceiling_dbtp"])
+    clipping_detected = bool(value.get("clipping_detected"))
+    sample_rate_matches = int(value["sample_rate_hz"]) == int(value["expected_sample_rate_hz"])
+    channels_match = int(value["channels"]) == int(value["expected_channels"])
+    unexpected_silences = list(value.get("unexpected_long_silences") or [])
+    seam_checks = _validate_seam_checks(value.get("seam_artifact_checks") or [])
+
+    return {
+        "loudness_target": {
+            "target_lufs": float(value["loudness_target_lufs"]),
+            "integrated_loudness_lufs": float(value["integrated_loudness_lufs"]),
+            "tolerance_lufs": tolerance,
+            "outcome": "pass" if loudness_delta <= tolerance else "fail",
+        },
+        "peak_ceiling": {
+            "ceiling_dbtp": float(value["true_peak_ceiling_dbtp"]),
+            "measured_true_peak_dbtp": float(value["measured_true_peak_dbtp"]),
+            "outcome": "fail" if peak_violation else "pass",
+        },
+        "silence_trim": value.get("silence_trim") or {"applied": False},
+        "unexpected_long_silences": unexpected_silences,
+        "seam_artifact_checks": seam_checks,
+        "sample_rate_channel_conformity": {
+            "expected_sample_rate_hz": int(value["expected_sample_rate_hz"]),
+            "sample_rate_hz": int(value["sample_rate_hz"]),
+            "expected_channels": int(value["expected_channels"]),
+            "channels": int(value["channels"]),
+            "outcome": "pass" if sample_rate_matches and channels_match else "fail",
+        },
+        "clipping": {"detected": clipping_detected, "outcome": "fail" if clipping_detected else "pass"},
+    }
+
+
+def _validate_seam_checks(value: list[Any]) -> list[dict[str, Any]]:
+    checks: list[dict[str, Any]] = []
+    for idx, check in enumerate(value):
+        if not isinstance(check, dict):
+            raise_validation("seam_artifact_checks entries must be objects")
+        seam_id = _require_id(check.get("seam_id"), f"seam_artifact_checks[{idx}].seam_id")
+        outcome = check.get("outcome")
+        if outcome not in {"pass", "warn", "fail"}:
+            raise_validation("seam artifact outcome must be pass, warn, or fail")
+        checks.append({"seam_id": seam_id, "outcome": outcome, "notes": check.get("notes") or ""})
+    return checks
+
+
+def _derive_mastering_outcome(chunks: list[dict[str, Any]], audio_targets: dict[str, Any]) -> str:
+    outcomes = [chunk["outcome"] for chunk in chunks]
+    outcomes.extend(audio_targets["loudness_target"]["outcome"] for _ in [0])
+    outcomes.append(audio_targets["peak_ceiling"]["outcome"])
+    outcomes.append(audio_targets["sample_rate_channel_conformity"]["outcome"])
+    outcomes.append(audio_targets["clipping"]["outcome"])
+    outcomes.extend(check["outcome"] for check in audio_targets["seam_artifact_checks"])
+    if audio_targets["unexpected_long_silences"]:
+        outcomes.append("warn")
+    if "fail" in outcomes:
+        return "fail"
+    if "warn" in outcomes:
+        return "warn"
+    return "pass"
+
+
+def _validate_final_artifact_uris(value: Any) -> list[str]:
+    if not isinstance(value, list) or not value:
+        raise_validation("mastering report final_artifact_uris must be a non-empty array")
+    for uri in value:
+        validate_external_target_root(uri)
+    return list(value)
+
+
+def _default_mastering_report_uri(request: dict[str, Any], final_artifact_uris: list[str]) -> str:
+    root = str((final_artifact_uris[0]).rsplit("/", 1)[0])
+    if root.endswith("/final"):
+        root = root.rsplit("/", 1)[0]
+    return f"{root}/reports/final/mastering_report.json"
 
 
 def _style_controls(value: dict[str, Any]) -> dict[str, Any]:

@@ -197,6 +197,8 @@ def validate_manifest_write(bundle: dict[str, Any], manifest: dict[str, Any]) ->
     if review:
         manifest = dict(manifest)
         manifest["human_review"] = review
+    if artifact_type in VOICE_ARTIFACTS and manifest.get("artifact_status") in {"approved", "delivered"} and not manifest.get("mastering_report_uri"):
+        raise HTTPException(status_code=403, detail="voice artifacts require mastering_report_uri before approval or delivery")
     validate_ids_and_leakage(manifest, "manifest")
     return manifest
 
