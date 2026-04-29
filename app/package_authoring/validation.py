@@ -29,6 +29,8 @@ VOICE_ARTIFACTS = {"voice_message"}
 VIDEO_ARTIFACTS = {"talking_head_clip"}
 LIKNESS_USES = {"private_audio", "public_audio", "private_video", "public_video"}
 TEXT_USES = {"memorial_text", "memory_page"}
+REVIEW_STATES = {"not_required", "required_pending", "approved", "changes_requested", "rejected"}
+REVIEW_REQUIRED_TIERS = {"guided_consultant", "consultant", "high_trust", "consultant_high_trust"}
 SCHEMA_PATH = Path(__file__).parent / "schema" / "async-memorial-package.schema.json"
 
 
@@ -191,8 +193,80 @@ def validate_manifest_write(bundle: dict[str, Any], manifest: dict[str, Any]) ->
         missing = [ref for ref in authority_refs if ref not in allowed_refs]
         if missing:
             raise HTTPException(status_code=403, detail=f"authority gate denies manifest refs: {missing}")
+    review = normalize_manifest_review_metadata(bundle, manifest)
+    if review:
+        manifest = dict(manifest)
+        manifest["human_review"] = review
     validate_ids_and_leakage(manifest, "manifest")
     return manifest
+
+
+def normalize_manifest_review_metadata(bundle: dict[str, Any], manifest: dict[str, Any]) -> dict[str, Any] | None:
+    """Validate generic human-review metadata at the artifact manifest boundary.
+
+    Sanctra package tiers decide when review is required. The shared voice lane only
+    receives/stores generic review state and report refs; family/relationship UX is
+    intentionally kept out of this metadata seam.
+    """
+    artifact_type = manifest.get("artifact_type")
+    review = manifest.get("human_review") or {}
+    if not isinstance(review, dict):
+        raise_validation("human_review must be a JSON object")
+
+    review_required = bool(review.get("review_required"))
+    if artifact_type in VOICE_ARTIFACTS and _package_requires_review(bundle, manifest.get("package_ref")):
+        review_required = True
+
+    state = review.get("state") or ("required_pending" if review_required else "not_required")
+    if state not in REVIEW_STATES:
+        raise_validation("human_review.state must be not_required, required_pending, approved, changes_requested, or rejected")
+    if state == "not_required" and review_required:
+        raise HTTPException(status_code=403, detail="consultant/high-trust voice artifacts require human review")
+    if state != "not_required" and not review_required:
+        raise_validation("human_review.review_required must be true unless state is not_required")
+
+    normalized = {
+        "review_required": review_required,
+        "state": state,
+        "reviewer_ref": review.get("reviewer_ref"),
+        "reviewer_identity_ref": review.get("reviewer_identity_ref"),
+        "decided_at": review.get("decided_at"),
+        "notes": review.get("notes") or "",
+        "quality_gate_refs": list(review.get("quality_gate_refs") or manifest.get("quality_gate_refs") or []),
+        "qa_report_refs": list(review.get("qa_report_refs") or []),
+        "mastering_report_refs": list(review.get("mastering_report_refs") or []),
+        "review_decision_refs": list(review.get("review_decision_refs") or manifest.get("review_decision_refs") or []),
+    }
+    for key in ("quality_gate_refs", "qa_report_refs", "mastering_report_refs", "review_decision_refs"):
+        if not all(isinstance(ref, str) and ref for ref in normalized[key]):
+            raise_validation(f"human_review.{key} must contain non-empty string refs")
+
+    if state in {"approved", "changes_requested", "rejected"}:
+        if not isinstance(normalized["reviewer_ref"], str) or not ID_PATTERN.match(normalized["reviewer_ref"]):
+            raise_validation("human_review.reviewer_ref is required for terminal review decisions")
+        if not isinstance(normalized["decided_at"], str) or not normalized["decided_at"].strip():
+            raise_validation("human_review.decided_at is required for terminal review decisions")
+        if state in {"changes_requested", "rejected"} and not (
+            normalized["quality_gate_refs"] or normalized["qa_report_refs"] or normalized["mastering_report_refs"]
+        ):
+            raise_validation("changes_requested/rejected human reviews must retain QA or mastering report refs")
+
+    if manifest.get("artifact_status") in {"approved", "delivered"} and review_required and state != "approved":
+        raise HTTPException(status_code=403, detail="caller-facing delivery is blocked until human_review.state is approved")
+    if state in {"changes_requested", "rejected"} and manifest.get("artifact_status") in {"approved", "delivered"}:
+        raise HTTPException(status_code=403, detail="changes_requested/rejected artifacts cannot be approved or delivered")
+    if review_required or review:
+        return normalized
+    return None
+
+
+def _package_requires_review(bundle: dict[str, Any], package_ref: Any) -> bool:
+    for package in bundle.get("memorial_packages", []):
+        if package.get("package_id") != package_ref:
+            continue
+        tier_values = {package.get("tier"), package.get("trust_tier"), package.get("delivery_tier")}
+        return any(isinstance(tier, str) and tier in REVIEW_REQUIRED_TIERS for tier in tier_values)
+    return False
 
 
 def upsert_manifest(bundle: dict[str, Any], manifest: dict[str, Any]) -> dict[str, Any]:

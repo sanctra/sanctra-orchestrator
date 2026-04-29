@@ -158,6 +158,69 @@ def main() -> None:
         "status": "manifest_received",
     }
 
+    pending_delivery = deepcopy(voice_manifest)
+    pending_delivery["manifest_id"] = "manifest:runtime_pending_delivery_001"
+    pending_delivery["artifact_status"] = "delivered"
+    pending_delivery["outputs"][0]["artifact_id"] = "artifact:runtime_pending_delivery_mp3_001"
+    pending_delivery["human_review"] = {
+        "review_required": True,
+        "state": "required_pending",
+        "quality_gate_refs": ["gate:voice_clone_private_001"],
+        "qa_report_refs": ["voice-qa:private-message-pass-001"],
+        "mastering_report_refs": ["mastering:private-message-pass-001"],
+        "review_decision_refs": [],
+    }
+    assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": pending_delivery}), 403)
+
+    approved_delivery = deepcopy(pending_delivery)
+    approved_delivery["manifest_id"] = "manifest:runtime_approved_delivery_001"
+    approved_delivery["outputs"][0]["artifact_id"] = "artifact:runtime_approved_delivery_mp3_001"
+    approved_delivery["human_review"].update(
+        {
+            "state": "approved",
+            "reviewer_ref": "stakeholder:consultant_01",
+            "reviewer_identity_ref": "staff_contact:consultant_01",
+            "decided_at": "2026-04-29T13:00:00Z",
+            "notes": "QA and mastering reports reviewed; approved for private family delivery.",
+        }
+    )
+    approved = assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": approved_delivery}), 200)
+    assert approved == {"manifest_id": "manifest:runtime_approved_delivery_001", "artifact_status": "delivered"}
+
+    changes_requested = deepcopy(approved_delivery)
+    changes_requested["manifest_id"] = "manifest:runtime_changes_requested_001"
+    changes_requested["artifact_status"] = "generated"
+    changes_requested["outputs"][0]["artifact_id"] = "artifact:runtime_changes_requested_mp3_001"
+    changes_requested["human_review"].update(
+        {
+            "state": "changes_requested",
+            "notes": "Mastering report found mouth-click artifacts; regenerate before delivery.",
+            "qa_report_refs": ["voice-qa:private-message-clicks-001"],
+            "mastering_report_refs": ["mastering:private-message-clicks-001"],
+        }
+    )
+    assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": changes_requested}), 200)
+
+    rejected_delivery = deepcopy(changes_requested)
+    rejected_delivery["manifest_id"] = "manifest:runtime_rejected_delivery_001"
+    rejected_delivery["artifact_status"] = "delivered"
+    rejected_delivery["outputs"][0]["artifact_id"] = "artifact:runtime_rejected_delivery_mp3_001"
+    rejected_delivery["human_review"].update(
+        {
+            "state": "rejected",
+            "notes": "QA report confirms unusable clone; keep reports linked for audit.",
+            "qa_report_refs": ["voice-qa:private-message-rejected-001"],
+        }
+    )
+    assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": rejected_delivery}), 403)
+
+    fetched_after_review = assert_status(client.get(f"/packages/{package_id}"), 200)
+    reviewed_manifests = {item["manifest_id"]: item for item in fetched_after_review["bundle"]["artifact_manifests"]}
+    retained_review = reviewed_manifests["manifest:runtime_changes_requested_001"]["human_review"]
+    assert retained_review["state"] == "changes_requested"
+    assert retained_review["qa_report_refs"] == ["voice-qa:private-message-clicks-001"]
+    assert retained_review["mastering_report_refs"] == ["mastering:private-message-clicks-001"]
+
     bad = deepcopy(bundle)
     bad["memorial_subjects"][0]["public_bio"] = "Paperclip issue 3230430e-9ed0-4be8-a1ca-c98b6672a9bf leaked"
     assert_status(client.post("/packages", json={"bundle": bad}), 400)
