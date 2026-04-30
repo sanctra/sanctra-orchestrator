@@ -40,3 +40,20 @@ class VoiceArtifactManifestImportRequest(BaseModel):
 
 class VoiceArtifactMasteringReportRequest(BaseModel):
     report: dict = Field(default_factory=dict)
+
+
+class LaneAPromptSessionRequest(BaseModel):
+    session: dict = Field(default_factory=dict)
+
+
+class LaneAPromptResponseRequest(BaseModel):
+    response: dict = Field(default_factory=dict)
+
+
+class LaneBArchiveIntakeRequest(BaseModel):
+    manifest: dict = Field(default_factory=dict)
+
+
+class IngestionReadinessRequest(BaseModel):
+    lane_refs: list[str] = Field(default_factory=list)
+    requested_artifact_families: list[str] = Field(default_factory=list)

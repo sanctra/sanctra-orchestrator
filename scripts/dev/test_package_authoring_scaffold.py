@@ -329,6 +329,138 @@ def main() -> None:
     assert retained_review["qa_report_refs"] == ["voice-qa:private-message-clicks-001"]
     assert retained_review["mastering_report_refs"] == ["mastering:private-message-clicks-001"]
 
+    lane_a_session = {
+        "session_id": "prompt_session:living_maria_001",
+        "subject_ref": "subject:maria_ellis",
+        "consent_snapshot": {
+            "subject_consent": True,
+            "revocable": True,
+            "revocation_contact": "sanctra-support://revocation/maria-ellis",
+            "source_lineage_retained": True,
+        },
+        "prompt_protocol_version": "sanctra.lane_a_prompt_protocol.v0",
+        "intended_modalities": ["text", "audio"],
+        "prompts": [
+            {
+                "prompt_id": "prompt:care_message",
+                "section": "relationships",
+                "text": "What would you want someone you love to remember when they feel alone?",
+            }
+        ],
+    }
+    created_prompt_session = assert_status(
+        client.post(f"/packages/{package_id}/lane-a/prompt-sessions", json={"session": lane_a_session}),
+        200,
+    )
+    assert created_prompt_session["prompt_session_id"] == "prompt_session:living_maria_001"
+    assert created_prompt_session["required_consent_acknowledgements"] == [
+        "subject_consent",
+        "revocable",
+        "source_lineage_retained",
+    ]
+
+    missing_subject_consent = deepcopy(lane_a_session)
+    missing_subject_consent["session_id"] = "prompt_session:missing_consent_001"
+    missing_subject_consent["consent_snapshot"]["subject_consent"] = False
+    assert_status(
+        client.post(f"/packages/{package_id}/lane-a/prompt-sessions", json={"session": missing_subject_consent}),
+        403,
+    )
+
+    lane_a_response = {
+        "response_id": "prompt_response:care_message_text_001",
+        "prompt_id": "prompt:care_message",
+        "modality": "text",
+        "transcript": "When you feel alone, remember the garden and the Sunday table.",
+        "capture_context": {"captured_at": "2026-04-30T20:00:00Z", "capture_method": "typed_portal"},
+        "subject_review_status": "approved",
+        "subject_coverage": "Care message for family when grieving.",
+    }
+    normalized_response = assert_status(
+        client.post(
+            f"/packages/{package_id}/lane-a/prompt-sessions/prompt_session:living_maria_001/responses",
+            json={"response": lane_a_response},
+        ),
+        200,
+    )
+    assert normalized_response["source_inventory_fragment"]["source_id"] == "source:prompt_response_care_message_text_001"
+    assert normalized_response["review_queue_status"] == "normalized_source_pending_reviewer"
+
+    unapproved_response = deepcopy(lane_a_response)
+    unapproved_response["response_id"] = "prompt_response:unapproved_text_001"
+    unapproved_response["subject_review_status"] = "draft"
+    assert_status(
+        client.post(
+            f"/packages/{package_id}/lane-a/prompt-sessions/prompt_session:living_maria_001/responses",
+            json={"response": unapproved_response},
+        ),
+        403,
+    )
+
+    archive_intake = {
+        "intake_id": "archive_intake:family_box_001",
+        "uploader_stakeholder_ref": "stakeholder:requester_dana",
+        "authority_attestation": {"can_submit_archives": True, "likeness_use_scope": "private_family"},
+        "items": [
+            {
+                "source_id": "source:archive_teacher_letter_001",
+                "media_type": "document",
+                "storage_ref": "sanctra-storage://intake/maria-ellis/archive/teacher-letter.pdf",
+                "claimed_origin": "Letter preserved by Dana from Maria's teaching files.",
+                "permission_status": "allowed",
+                "subject_identity_confidence": "confirmed",
+                "quality_status": "usable",
+                "subject_coverage": "Teaching career reflection.",
+            },
+            {
+                "source_id": "source:archive_unknown_voice_001",
+                "media_type": "audio",
+                "storage_ref": "sanctra-storage://intake/maria-ellis/archive/unknown-cassette.wav",
+                "claimed_origin": "Unlabeled cassette from family archive.",
+                "permission_status": "unknown",
+                "subject_identity_confidence": "unknown",
+                "quality_status": "unknown",
+            },
+        ],
+    }
+    archive_response = assert_status(
+        client.post(f"/packages/{package_id}/lane-b/archive-intakes", json={"manifest": archive_intake}),
+        200,
+    )
+    assert [item["source_id"] for item in archive_response["accepted_source_fragments"]] == ["source:archive_teacher_letter_001"]
+    assert archive_response["quarantined_items"][0]["source_id"] == "source:archive_unknown_voice_001"
+    assert archive_response["review_queue_status"] == "quarantine_review_required"
+
+    missing_provenance = deepcopy(archive_intake)
+    missing_provenance["intake_id"] = "archive_intake:missing_provenance_001"
+    missing_provenance["items"] = [deepcopy(archive_intake["items"][0])]
+    missing_provenance["items"][0]["source_id"] = "source:archive_missing_provenance_001"
+    missing_provenance["items"][0].pop("claimed_origin")
+    assert_status(
+        client.post(f"/packages/{package_id}/lane-b/archive-intakes", json={"manifest": missing_provenance}),
+        400,
+    )
+
+    readiness = assert_status(
+        client.post(
+            f"/packages/{package_id}/ingestion-readiness",
+            json={
+                "lane_refs": ["prompt_session:living_maria_001", "archive_intake:family_box_001"],
+                "requested_artifact_families": ["memorial_text", "voice"],
+            },
+        ),
+        200,
+    )
+    assert readiness["per_modality_readiness"]["memorial_text"]["state"] == "ready_for_review"
+    assert readiness["per_modality_readiness"]["voice"]["state"] == "blocked"
+    assert "unresolved quarantine blocks likeness generation" in readiness["per_modality_readiness"]["voice"]["blockers"]
+
+    fetched_after_ingestion = assert_status(client.get(f"/packages/{package_id}"), 200)
+    inventory_items = fetched_after_ingestion["bundle"]["source_inventories"][0]["items"]
+    assert {"source:prompt_response_care_message_text_001", "source:archive_teacher_letter_001"}.issubset(
+        {item["source_id"] for item in inventory_items}
+    )
+
     bad = deepcopy(bundle)
     bad["memorial_subjects"][0]["public_bio"] = "Paperclip issue 3230430e-9ed0-4be8-a1ca-c98b6672a9bf leaked"
     assert_status(client.post("/packages", json={"bundle": bad}), 400)

@@ -10,6 +10,12 @@ from .validation import (
     validate_bundle,
     validate_manifest_write,
 )
+from .ingestion import (
+    create_lane_a_prompt_session,
+    create_lane_b_archive_intake,
+    ingestion_readiness,
+    submit_lane_a_prompt_response,
+)
 from .voice_artifacts import (
     FakeVoiceArtifactJobClient,
     build_mastering_report,
@@ -109,6 +115,28 @@ class PackageAuthoringService:
             "final_outcome": mastering_report["final_outcome"],
             "mastering_report_uri": mastering_report["report_uri"],
         }
+
+    def create_lane_a_prompt_session(self, package_id: str, session: dict) -> dict:
+        bundle = self.get(package_id)["bundle"]
+        updated, response = create_lane_a_prompt_session(bundle, package_id, session)
+        self.store.write(package_id, updated)
+        return response
+
+    def submit_lane_a_prompt_response(self, package_id: str, session_id: str, response: dict) -> dict:
+        bundle = self.get(package_id)["bundle"]
+        updated, normalized = submit_lane_a_prompt_response(bundle, package_id, session_id, response)
+        self.store.write(package_id, updated)
+        return normalized
+
+    def create_lane_b_archive_intake(self, package_id: str, manifest: dict) -> dict:
+        bundle = self.get(package_id)["bundle"]
+        updated, response = create_lane_b_archive_intake(bundle, package_id, manifest)
+        self.store.write(package_id, updated)
+        return response
+
+    def ingestion_readiness(self, package_id: str, lane_refs: list[str], requested_artifact_families: list[str]) -> dict:
+        bundle = self.get(package_id)["bundle"]
+        return ingestion_readiness(bundle, package_id, lane_refs, requested_artifact_families)
 
     @staticmethod
     def response(package_id: str, bundle: dict) -> dict:

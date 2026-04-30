@@ -6,6 +6,10 @@ from app.package_authoring.models import (
     ArtifactManifestRequest,
     AuthorityPreflightRequest,
     AuthorityPreflightResponse,
+    IngestionReadinessRequest,
+    LaneAPromptResponseRequest,
+    LaneAPromptSessionRequest,
+    LaneBArchiveIntakeRequest,
     PackageCreateRequest,
     PackageReplaceRequest,
     VoiceArtifactManifestImportRequest,
@@ -77,3 +81,29 @@ def write_voice_artifact_mastering_report(
     package_id: str, request_id: str, request: VoiceArtifactMasteringReportRequest
 ) -> dict:
     return service().write_voice_artifact_mastering_report(package_id, request_id, request.report)
+
+
+@router.post("/packages/{package_id}/lane-a/prompt-sessions")
+def create_lane_a_prompt_session(package_id: str, request: LaneAPromptSessionRequest) -> dict:
+    return service().create_lane_a_prompt_session(package_id, request.session)
+
+
+@router.post("/packages/{package_id}/lane-a/prompt-sessions/{session_id}/responses")
+def submit_lane_a_prompt_response(
+    package_id: str, session_id: str, request: LaneAPromptResponseRequest
+) -> dict:
+    return service().submit_lane_a_prompt_response(package_id, session_id, request.response)
+
+
+@router.post("/packages/{package_id}/lane-b/archive-intakes")
+def create_lane_b_archive_intake(package_id: str, request: LaneBArchiveIntakeRequest) -> dict:
+    return service().create_lane_b_archive_intake(package_id, request.manifest)
+
+
+@router.post("/packages/{package_id}/ingestion-readiness")
+def package_ingestion_readiness(package_id: str, request: IngestionReadinessRequest) -> dict:
+    return service().ingestion_readiness(
+        package_id,
+        lane_refs=request.lane_refs,
+        requested_artifact_families=request.requested_artifact_families,
+    )
