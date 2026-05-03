@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import HTTPException
+from jsonschema import Draft202012Validator, FormatChecker
 
 SCHEMA_VERSION = "sanctra.async_memorial_package.v0"
 REQUIRED_COLLECTIONS = (
@@ -32,11 +33,40 @@ TEXT_USES = {"memorial_text", "memory_page"}
 REVIEW_STATES = {"not_required", "required_pending", "approved", "changes_requested", "rejected"}
 REVIEW_REQUIRED_TIERS = {"guided_consultant", "consultant", "high_trust", "consultant_high_trust"}
 SCHEMA_PATH = Path(__file__).parent / "schema" / "async-memorial-package.schema.json"
+SUBJECT_DATASET_SCHEMA_VERSION = "sanctra.subject_dataset_package.v0.3"
+SUBJECT_DATASET_SCHEMA_PATH = Path(__file__).parent / "schema" / "subject-dataset-package.schema.json"
 
 
 def load_schema_contract() -> dict[str, Any]:
     with SCHEMA_PATH.open("r", encoding="utf-8") as fh:
         return json.load(fh)
+
+
+def validate_json_schema_contract(instance: dict[str, Any], schema_path: Path, *, label: str) -> None:
+    """Run Draft 2020-12 JSON Schema validation for runtime package contracts."""
+    with schema_path.open("r", encoding="utf-8") as fh:
+        schema = json.load(fh)
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    errors = sorted(validator.iter_errors(instance), key=lambda error: list(error.absolute_path))
+    if errors:
+        first = errors[0]
+        location = ".".join(str(part) for part in first.absolute_path) or "<root>"
+        raise_validation(f"{label} schema validation failed at {location}: {first.message}")
+
+
+def validate_subject_dataset_package(package: dict[str, Any]) -> dict[str, Any]:
+    """Validate the governed Subject Dataset Package v0.3 contract.
+
+    This is intentionally side-effect-free: it validates a submitted package
+    object but does not enqueue jobs, mutate storage, or call model providers.
+    """
+    if not isinstance(package, dict):
+        raise_validation("subject dataset package must be a JSON object")
+    if package.get("schema_version") != SUBJECT_DATASET_SCHEMA_VERSION:
+        raise_validation(f"schema_version must be {SUBJECT_DATASET_SCHEMA_VERSION}")
+    validate_json_schema_contract(package, SUBJECT_DATASET_SCHEMA_PATH, label="subject_dataset_package")
+    validate_ids_and_leakage(package)
+    return package
 
 
 def normalize_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
@@ -54,7 +84,7 @@ def normalize_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
 
 def validate_bundle(bundle: dict[str, Any], *, require_package: bool = True) -> dict[str, Any]:
     normalized = normalize_bundle(bundle)
-    load_schema_contract()  # Parse gate for vendored runtime contract.
+    validate_json_schema_contract(normalized, SCHEMA_PATH, label="async_memorial_package")
     if require_package and not normalized["memorial_packages"]:
         raise_validation("memorial_packages must include at least one package record")
     validate_ids_and_leakage(normalized)
