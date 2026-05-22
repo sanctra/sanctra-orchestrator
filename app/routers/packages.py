@@ -52,7 +52,7 @@ def package_authority_preflight(package_id: str, request: AuthorityPreflightRequ
 
 @router.post("/packages/{package_id}/artifact-manifests")
 def write_artifact_manifest(package_id: str, request: ArtifactManifestRequest) -> dict:
-    return service().write_manifest(package_id, request.manifest)
+    return service().write_manifest(package_id, request.manifest, request.actor)
 
 
 @router.post("/packages/{package_id}/voice-artifact-requests/{request_id}/submit")

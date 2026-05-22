@@ -1,0 +1,2312 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sanctra.local/schemas/subject-dataset-package.schema.json",
+  "title": "Sanctra Subject Dataset Package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "package",
+    "subjects",
+    "agents",
+    "authority_claims",
+    "consent_grants",
+    "policy_resolutions",
+    "audience_profiles",
+    "prompt_cards",
+    "prompt_responses",
+    "artifacts",
+    "artifact_derivatives",
+    "processing_runs",
+    "extracted_observations",
+    "atoms",
+    "guardrail_rules",
+    "readiness_assessments",
+    "review_queue_items",
+    "review_decisions",
+    "dataset_manifests",
+    "evaluation_cases",
+    "runtime_policy",
+    "audit_events",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "sanctra.subject_dataset_package.v0.3"
+    },
+    "package": {
+      "$ref": "#/$defs/Package"
+    },
+    "subjects": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Subject"
+      }
+    },
+    "agents": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Agent"
+      }
+    },
+    "authority_claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/AuthorityClaim"
+      }
+    },
+    "consent_grants": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/ConsentGrant"
+      }
+    },
+    "policy_resolutions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/PolicyResolution"
+      }
+    },
+    "audience_profiles": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/AudienceProfile"
+      }
+    },
+    "audience_content_policies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/AudienceContentPolicy"
+      }
+    },
+    "prompt_cards": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/PromptCard"
+      }
+    },
+    "prompt_responses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/PromptResponse"
+      }
+    },
+    "interview_sessions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/InterviewSession"
+      }
+    },
+    "interview_turns": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/InterviewTurn"
+      }
+    },
+    "facilitated_exercises": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/FacilitatedExercise"
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Artifact"
+      }
+    },
+    "artifact_derivatives": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ArtifactDerivative"
+      }
+    },
+    "processing_runs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ProcessingRun"
+      }
+    },
+    "extracted_observations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ExtractedObservation"
+      }
+    },
+    "atoms": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Atom"
+      }
+    },
+    "guardrail_rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/GuardrailRule"
+      }
+    },
+    "readiness_assessments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/ReadinessAssessment"
+      }
+    },
+    "review_queue_items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ReviewQueueItem"
+      }
+    },
+    "review_decisions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ReviewDecision"
+      }
+    },
+    "dataset_manifests": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/DatasetManifest"
+      }
+    },
+    "model_artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ModelArtifact"
+      }
+    },
+    "evaluation_cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/EvaluationCase"
+      }
+    },
+    "runtime_answer_traces": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/RuntimeAnswerTrace"
+      }
+    },
+    "correction_events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/CorrectionEvent"
+      }
+    },
+    "revocation_events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/RevocationEvent"
+      }
+    },
+    "model_deprecation_events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ModelDeprecationEvent"
+      }
+    },
+    "runtime_policy": {
+      "$ref": "#/$defs/RuntimePolicy"
+    },
+    "audit_events": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/AuditEvent"
+      }
+    },
+    "created_at": {
+      "$ref": "#/$defs/Timestamp"
+    }
+  },
+  "$defs": {
+    "Id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_:-]{2,127}$"
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "RefList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Id"
+      }
+    },
+    "Package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "package_id",
+        "subject_id",
+        "package_version",
+        "capture_modes",
+        "status",
+        "intended_product_tiers",
+        "default_audience_scope",
+        "primary_authority_claim_id",
+        "consent_policy_snapshot_id",
+        "readiness_state",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "subject_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capture_modes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "subject_directed",
+              "live_ai_interview",
+              "therapist_facilitated",
+              "family_archive",
+              "historical_media_upload",
+              "hybrid"
+            ]
+          }
+        },
+        "status": {
+          "enum": [
+            "intake",
+            "processing",
+            "review",
+            "approved",
+            "active",
+            "suspended",
+            "revoked",
+            "archived"
+          ]
+        },
+        "intended_product_tiers": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "archive_only",
+              "reviewed_record",
+              "text",
+              "voice",
+              "image_reference",
+              "visual_likeness",
+              "video_avatar",
+              "evaluation_only",
+              "funeral_service",
+              "private_family",
+              "public_legacy"
+            ]
+          }
+        },
+        "default_audience_scope": {
+          "enum": [
+            "private_family",
+            "named_people",
+            "funeral_home",
+            "internal_eval",
+            "public"
+          ]
+        },
+        "primary_authority_claim_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "consent_policy_snapshot_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "readiness_state": {
+          "enum": [
+            "tier_0_archive_preserved",
+            "tier_1_reviewed_record",
+            "tier_2_text_echo",
+            "tier_3_style_text_echo",
+            "tier_4_relationship_scoped_text",
+            "tier_5_private_voice",
+            "tier_6_visual_likeness",
+            "tier_7_video_avatar",
+            "tier_8_deployment_ready"
+          ]
+        },
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      }
+    },
+    "Subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject_id",
+        "canonical_name",
+        "living_status",
+        "primary_languages",
+        "identity_verification_status"
+      ],
+      "properties": {
+        "subject_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "canonical_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "preferred_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "pronouns": {
+          "type": "string"
+        },
+        "birth_date": {
+          "type": "string"
+        },
+        "death_date": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "living_status": {
+          "enum": [
+            "living",
+            "deceased",
+            "unknown"
+          ]
+        },
+        "primary_languages": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "other_languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cultural_context_notes": {
+          "type": "string"
+        },
+        "identity_verification_status": {
+          "enum": [
+            "unverified",
+            "self_asserted",
+            "verified",
+            "legally_verified"
+          ]
+        }
+      }
+    },
+    "Agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "agent_id",
+        "agent_type",
+        "display_name",
+        "verified_identity_status",
+        "authority_roles"
+      ],
+      "properties": {
+        "agent_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "agent_type": {
+          "enum": [
+            "subject",
+            "family_submitter",
+            "friend_submitter",
+            "expressive_arts_therapist",
+            "executor",
+            "approver",
+            "reviewer",
+            "system",
+            "model"
+          ]
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relationship_to_subject": {
+          "type": "string"
+        },
+        "verified_identity_status": {
+          "enum": [
+            "unverified",
+            "self_asserted",
+            "verified",
+            "legally_verified"
+          ]
+        },
+        "authority_roles": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "submitter",
+              "subject",
+              "family_reviewer",
+              "legal_authority",
+              "facilitator",
+              "processor",
+              "approver",
+              "runtime_user"
+            ]
+          }
+        },
+        "contact_id": {
+          "type": "string"
+        }
+      }
+    },
+    "AuthorityClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authority_claim_id",
+        "package_id",
+        "agent_id",
+        "claim_type",
+        "claim_text",
+        "status",
+        "review_required"
+      ],
+      "properties": {
+        "authority_claim_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "agent_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "claim_type": {
+          "enum": [
+            "subject_self",
+            "subject_consent",
+            "executor",
+            "next_of_kin",
+            "family_consensus",
+            "professional_facilitator",
+            "archive_owner",
+            "public_material",
+            "personal_correspondence",
+            "other"
+          ]
+        },
+        "claim_text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "supporting_artifact_ids": {
+          "$ref": "#/$defs/RefList"
+        },
+        "limitations": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "pending_review",
+            "accepted",
+            "accepted_limited",
+            "limited",
+            "rejected",
+            "disputed"
+          ]
+        },
+        "review_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ConsentGrant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "consent_id",
+        "package_id",
+        "grantor_agent_id",
+        "subject_id",
+        "grant_type",
+        "applies_to",
+        "allowed_operations",
+        "prohibited_operations",
+        "audience_scope",
+        "posthumous_allowed",
+        "revocation_behavior",
+        "status"
+      ],
+      "properties": {
+        "consent_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "grantor_agent_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "subject_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "grant_type": {
+          "enum": [
+            "allow",
+            "deny",
+            "limit"
+          ]
+        },
+        "applies_to": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "artifact_ids",
+            "artifact_classes",
+            "derived_data",
+            "model_artifacts"
+          ],
+          "properties": {
+            "artifact_ids": {
+              "$ref": "#/$defs/RefList"
+            },
+            "artifact_classes": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "text",
+                  "audio",
+                  "image",
+                  "video",
+                  "document",
+                  "message_export",
+                  "metadata_bundle",
+                  "legal_document",
+                  "therapist_note",
+                  "generated_output"
+                ]
+              }
+            },
+            "derived_data": {
+              "type": "boolean"
+            },
+            "model_artifacts": {
+              "type": "boolean"
+            }
+          }
+        },
+        "allowed_operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Operation"
+          }
+        },
+        "prohibited_operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Operation"
+          }
+        },
+        "audience_scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scope_type",
+            "allowed_audience_ids"
+          ],
+          "properties": {
+            "scope_type": {
+              "enum": [
+                "named_people",
+                "family_group",
+                "private_only",
+                "public",
+                "funeral_home",
+                "internal_eval"
+              ]
+            },
+            "allowed_audience_ids": {
+              "$ref": "#/$defs/RefList"
+            }
+          }
+        },
+        "posthumous_allowed": {
+          "type": "boolean"
+        },
+        "revocation_behavior": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "delete_originals",
+            "delete_derivatives",
+            "exclude_from_future_training",
+            "deprecate_model_artifacts",
+            "retain_noncontent_audit_record"
+          ],
+          "properties": {
+            "delete_originals": {
+              "type": "boolean"
+            },
+            "delete_derivatives": {
+              "type": "boolean"
+            },
+            "exclude_from_future_training": {
+              "type": "boolean"
+            },
+            "deprecate_model_artifacts": {
+              "type": "boolean"
+            },
+            "retain_noncontent_audit_record": {
+              "type": "boolean"
+            }
+          }
+        },
+        "status": {
+          "enum": [
+            "active",
+            "superseded",
+            "revoked",
+            "disputed"
+          ]
+        }
+      }
+    },
+    "Operation": {
+      "enum": [
+        "store_original",
+        "process",
+        "transcribe",
+        "ocr",
+        "diarize",
+        "segment",
+        "face_detect",
+        "face_crop",
+        "speaker_isolate",
+        "extract_observations",
+        "create_atoms",
+        "use_for_retrieval",
+        "train_text_model",
+        "train_voice_model",
+        "train_image_model",
+        "train_video_model",
+        "evaluation",
+        "internal_quality_testing",
+        "private_runtime_delivery",
+        "public_runtime_delivery",
+        "funeral_home_delivery",
+        "share_with_professional_reviewer",
+        "advertising",
+        "political_persuasion",
+        "medical_advice",
+        "legal_advice",
+        "financial_advice",
+        "delete_on_request",
+        "exclude_from_future_training",
+        "deprecate_dependent_models"
+      ]
+    },
+    "PolicyResolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_resolution_id",
+        "target_item_type",
+        "target_item_id",
+        "operation",
+        "policy_result",
+        "reason_codes",
+        "resolved_at"
+      ],
+      "properties": {
+        "policy_resolution_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "target_item_type": {
+          "enum": [
+            "artifact",
+            "derivative",
+            "atom",
+            "manifest",
+            "model_artifact",
+            "runtime_delivery"
+          ]
+        },
+        "target_item_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "operation": {
+          "$ref": "#/$defs/Operation"
+        },
+        "policy_result": {
+          "enum": [
+            "allowed",
+            "denied",
+            "requires_review",
+            "quarantined"
+          ]
+        },
+        "reason_codes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "resolved_at": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      }
+    },
+    "AudienceProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "audience_id",
+        "package_id",
+        "audience_type",
+        "display_label",
+        "direct_address_allowed"
+      ],
+      "properties": {
+        "audience_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "audience_type": {
+          "enum": [
+            "named_person",
+            "role",
+            "group",
+            "public"
+          ]
+        },
+        "display_label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relationship_to_subject": {
+          "type": "string"
+        },
+        "direct_address_allowed": {
+          "type": "boolean"
+        },
+        "allowed_terms_of_address": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "disallowed_terms_of_address": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tone_preferences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "correction_agents": {
+          "$ref": "#/$defs/RefList"
+        }
+      }
+    },
+    "AudienceContentPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_id",
+        "audience_id",
+        "content_item_type",
+        "content_item_id",
+        "visibility"
+      ],
+      "properties": {
+        "policy_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "audience_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "content_item_type": {
+          "enum": [
+            "artifact",
+            "derivative",
+            "atom",
+            "memory_atom",
+            "fact_atom",
+            "style_atom",
+            "custom_qa_atom"
+          ]
+        },
+        "content_item_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "visibility": {
+          "enum": [
+            "visible",
+            "hidden",
+            "visible_with_limit",
+            "requires_review",
+            "requires_reviewer_approval"
+          ]
+        },
+        "runtime_instruction": {
+          "type": "string"
+        },
+        "approved_by_agent_id": {
+          "$ref": "#/$defs/Id"
+        }
+      }
+    },
+    "PromptCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prompt_id",
+        "prompt_version",
+        "catalog_version",
+        "lane",
+        "stage",
+        "title",
+        "prompt_text",
+        "target_modalities",
+        "privacy_default",
+        "sensitivity_class",
+        "required_for",
+        "skip_allowed",
+        "downstream_targets"
+      ],
+      "properties": {
+        "prompt_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "prompt_version": {
+          "type": "string"
+        },
+        "catalog_version": {
+          "type": "string"
+        },
+        "lane": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "subject_directed",
+              "live_interview",
+              "therapist_facilitated",
+              "family_archive"
+            ]
+          }
+        },
+        "stage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prompt_text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "guidance_text": {
+          "type": "string"
+        },
+        "target_modalities": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "text",
+              "audio",
+              "image",
+              "video"
+            ]
+          }
+        },
+        "privacy_default": {
+          "enum": [
+            "private_package",
+            "family_private",
+            "public_ok",
+            "evaluation_only",
+            "restricted"
+          ]
+        },
+        "sensitivity_class": {
+          "enum": [
+            "ordinary",
+            "sensitive",
+            "high_presence",
+            "legal_authority",
+            "crisis_boundary"
+          ]
+        },
+        "required_for": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "skip_allowed": {
+          "type": "boolean"
+        },
+        "skip_options": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "prefer_not_to_answer",
+              "private_do_not_discuss",
+              "private_do_not_train",
+              "answer_later",
+              "ask_family_instead",
+              "not_applicable",
+              "evaluation_only"
+            ]
+          }
+        },
+        "downstream_targets": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "memory_atoms",
+              "fact_atoms",
+              "timeline_events",
+              "style_atoms",
+              "phrase_atoms",
+              "relationship_atoms",
+              "belief_value_atoms",
+              "boundary_atoms",
+              "known_unknown_atoms",
+              "evaluation_cases",
+              "guardrail_rules",
+              "triage"
+            ]
+          }
+        }
+      }
+    },
+    "PromptResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "response_id",
+        "package_id",
+        "prompt_id",
+        "respondent_agent_id",
+        "response_modality",
+        "response_status",
+        "privacy_scope",
+        "training_eligibility",
+        "created_at"
+      ],
+      "properties": {
+        "response_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "prompt_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "prompt_version": {
+          "type": "string"
+        },
+        "respondent_agent_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "response_modality": {
+          "enum": [
+            "text",
+            "audio",
+            "video",
+            "image",
+            "mixed"
+          ]
+        },
+        "response_text": {
+          "type": "string"
+        },
+        "linked_artifact_ids": {
+          "$ref": "#/$defs/RefList"
+        },
+        "response_status": {
+          "enum": [
+            "answered",
+            "skipped",
+            "partial",
+            "private_only",
+            "excluded_from_training",
+            "needs_review"
+          ]
+        },
+        "skip_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "privacy_scope": {
+          "enum": [
+            "private_package",
+            "family_private",
+            "public_ok",
+            "restricted",
+            "evaluation_only"
+          ]
+        },
+        "training_eligibility": {
+          "$ref": "#/$defs/TrainingEligibility"
+        },
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      }
+    },
+    "TrainingEligibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "retrieval": {
+          "enum": [
+            "allowed",
+            "limited",
+            "denied",
+            "not_applicable"
+          ]
+        },
+        "text_training": {
+          "enum": [
+            "allowed",
+            "limited",
+            "denied",
+            "not_applicable"
+          ]
+        },
+        "voice_training": {
+          "enum": [
+            "allowed",
+            "limited",
+            "denied",
+            "not_applicable"
+          ]
+        },
+        "image_training": {
+          "enum": [
+            "allowed",
+            "limited",
+            "denied",
+            "not_applicable"
+          ]
+        },
+        "video_training": {
+          "enum": [
+            "allowed",
+            "limited",
+            "denied",
+            "not_applicable"
+          ]
+        },
+        "evaluation": {
+          "enum": [
+            "allowed",
+            "limited",
+            "denied",
+            "not_applicable"
+          ]
+        }
+      }
+    },
+    "Artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "package_id",
+        "subject_id",
+        "submitted_by_agent_id",
+        "artifact_type",
+        "capture_source",
+        "storage_uri",
+        "mime_type",
+        "sha256",
+        "subject_presence",
+        "third_party_presence",
+        "consent_state",
+        "review_state"
+      ],
+      "properties": {
+        "artifact_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "subject_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "submitted_by_agent_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "artifact_type": {
+          "enum": [
+            "text",
+            "image",
+            "audio",
+            "video",
+            "document",
+            "message_export",
+            "metadata_bundle",
+            "legal_document",
+            "therapist_note",
+            "generated_output"
+          ]
+        },
+        "capture_source": {
+          "enum": [
+            "guided_prompt",
+            "live_interview",
+            "archive_upload",
+            "historical_subject_upload",
+            "custom_qa",
+            "therapist_session",
+            "reviewer_added"
+          ]
+        },
+        "storage_uri": {
+          "type": "string",
+          "pattern": "^(gs://|redacted://|artifact://|https://).+"
+        },
+        "original_filename": {
+          "type": "string"
+        },
+        "mime_type": {
+          "type": "string"
+        },
+        "byte_size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_created_at": {
+          "type": "string"
+        },
+        "uploaded_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "c2pa_manifest_present": {
+          "type": "boolean"
+        },
+        "embedded_metadata": {
+          "type": "object"
+        },
+        "subject_presence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "presence_type",
+            "identity_confidence"
+          ],
+          "properties": {
+            "presence_type": {
+              "enum": [
+                "subject_voice",
+                "subject_face",
+                "subject_text",
+                "about_subject",
+                "unknown"
+              ]
+            },
+            "identity_confidence": {
+              "enum": [
+                "subject_confirmed",
+                "submitter_confirmed",
+                "reviewer_confirmed",
+                "automated_guess",
+                "unknown"
+              ]
+            }
+          }
+        },
+        "third_party_presence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "contains_third_party_faces",
+            "contains_third_party_voices",
+            "contains_private_third_party_text",
+            "contains_minors"
+          ],
+          "properties": {
+            "contains_third_party_faces": {
+              "type": "boolean"
+            },
+            "contains_third_party_voices": {
+              "type": "boolean"
+            },
+            "contains_private_third_party_text": {
+              "type": "boolean"
+            },
+            "contains_minors": {
+              "type": "boolean"
+            }
+          }
+        },
+        "sensitivity_flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "consent_state": {
+          "enum": [
+            "pending",
+            "allowed",
+            "limited",
+            "denied",
+            "quarantined"
+          ]
+        },
+        "review_state": {
+          "enum": [
+            "unreviewed",
+            "needs_review",
+            "approved",
+            "approved_limited",
+            "rejected",
+            "quarantined"
+          ]
+        }
+      }
+    },
+    "ArtifactDerivative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "derivative_id",
+        "source_artifact_id",
+        "package_id",
+        "derivative_type",
+        "storage_uri",
+        "processing_run_id",
+        "sha256",
+        "policy_inherits_from_artifact",
+        "review_required",
+        "created_at"
+      ],
+      "properties": {
+        "derivative_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "source_artifact_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "derivative_type": {
+          "enum": [
+            "transcript",
+            "ocr_text",
+            "normalized_audio",
+            "audio_segment",
+            "video_segment",
+            "image_crop",
+            "face_track",
+            "speaker_diarization",
+            "embedding",
+            "caption",
+            "summary",
+            "quality_score"
+          ]
+        },
+        "storage_uri": {
+          "type": "string",
+          "pattern": "^(gs://|redacted://|artifact://|https://).+"
+        },
+        "processing_run_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "sha256": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policy_inherits_from_artifact": {
+          "type": "boolean"
+        },
+        "review_required": {
+          "type": "boolean"
+        },
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      }
+    },
+    "ProcessingRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "processing_run_id",
+        "package_id",
+        "activity_type",
+        "processor_type",
+        "processor_name",
+        "processor_version",
+        "input_artifact_ids",
+        "output_derivative_ids",
+        "started_at",
+        "completed_at",
+        "confidence"
+      ],
+      "properties": {
+        "processing_run_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "activity_type": {
+          "enum": [
+            "transcription",
+            "diarization",
+            "ocr",
+            "face_detection",
+            "speaker_verification",
+            "segmentation",
+            "summarization",
+            "embedding",
+            "quality_scoring",
+            "captioning"
+          ]
+        },
+        "processor_type": {
+          "enum": [
+            "human",
+            "sanctra_internal",
+            "third_party_model"
+          ]
+        },
+        "processor_name": {
+          "type": "string"
+        },
+        "processor_version": {
+          "type": "string"
+        },
+        "input_artifact_ids": {
+          "$ref": "#/$defs/RefList"
+        },
+        "output_derivative_ids": {
+          "$ref": "#/$defs/RefList"
+        },
+        "started_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "completed_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "known_limitations": {
+          "type": "string"
+        }
+      }
+    },
+    "ExtractedObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observation_id",
+        "package_id",
+        "source_artifact_id",
+        "observation_type",
+        "raw_text",
+        "confidence",
+        "requires_human_review",
+        "review_state"
+      ],
+      "properties": {
+        "observation_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "source_artifact_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "source_derivative_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "observation_type": {
+          "enum": [
+            "event",
+            "quote",
+            "person_mention",
+            "place_mention",
+            "date_mention",
+            "belief",
+            "style",
+            "boundary",
+            "sensitive_content",
+            "relationship",
+            "topic"
+          ]
+        },
+        "raw_text": {
+          "type": "string"
+        },
+        "normalized": {
+          "type": "object"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "extracted_by": {
+          "type": "string"
+        },
+        "requires_human_review": {
+          "type": "boolean"
+        },
+        "review_state": {
+          "enum": [
+            "pending",
+            "approved",
+            "approved_limited",
+            "rejected",
+            "disputed"
+          ]
+        }
+      }
+    },
+    "Atom": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "atom_id",
+        "package_id",
+        "subject_id",
+        "atom_type",
+        "summary",
+        "source_evidence",
+        "source_authority_tier",
+        "confidence",
+        "review_state",
+        "audience_scope",
+        "training_eligibility"
+      ],
+      "properties": {
+        "atom_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "subject_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "atom_type": {
+          "enum": [
+            "fact",
+            "memory",
+            "timeline_event",
+            "relationship",
+            "style",
+            "phrase",
+            "belief_value",
+            "boundary",
+            "known_unknown",
+            "visual",
+            "voice",
+            "mannerism",
+            "custom_qa",
+            "voice_description"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "artifact_id",
+              "selector_type"
+            ],
+            "properties": {
+              "artifact_id": {
+                "$ref": "#/$defs/Id"
+              },
+              "derivative_id": {
+                "$ref": "#/$defs/Id"
+              },
+              "selector_type": {
+                "enum": [
+                  "time_range",
+                  "text_span",
+                  "page_region",
+                  "image_crop",
+                  "whole_artifact",
+                  "review_note"
+                ]
+              },
+              "start": {
+                "type": "string"
+              },
+              "end": {
+                "type": "string"
+              },
+              "quote": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "source_authority_tier": {
+          "enum": [
+            "subject_self_report",
+            "subject_authored",
+            "subject_recorded",
+            "subject_direct_quote",
+            "family_direct_quote",
+            "family_memory",
+            "archive_document",
+            "automated_inference",
+            "reviewer_summary",
+            "therapist_note_context",
+            "model_generated_summary"
+          ]
+        },
+        "confidence": {
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        "review_state": {
+          "enum": [
+            "unreviewed",
+            "approved",
+            "approved_limited",
+            "disputed",
+            "rejected"
+          ]
+        },
+        "audience_scope": {
+          "$ref": "#/$defs/RefList"
+        },
+        "sensitivity_flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "training_eligibility": {
+          "$ref": "#/$defs/TrainingEligibility"
+        },
+        "runtime_behavior": {
+          "enum": [
+            "first_person_allowed",
+            "third_person_attributed",
+            "summary_only",
+            "do_not_guess",
+            "redirect",
+            "say_private",
+            "guardrail_only"
+          ]
+        },
+        "safe_runtime_phrasing": {
+          "type": "string"
+        },
+        "unsafe_runtime_phrasing": {
+          "type": "string"
+        }
+      }
+    },
+    "GuardrailRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "guardrail_id",
+        "package_id",
+        "rule_type",
+        "priority",
+        "trigger_intents",
+        "must_include",
+        "must_not_include",
+        "example_response",
+        "applies_to_audiences",
+        "review_state"
+      ],
+      "properties": {
+        "guardrail_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "rule_type": {
+          "enum": [
+            "identity_boundary",
+            "no_current_awareness",
+            "no_invented_memory",
+            "uncertain_source",
+            "private_topic",
+            "audience_specific_prohibition",
+            "medical_legal_financial_redirect",
+            "crisis_redirect",
+            "dependency_redirect",
+            "family_conflict_deescalation",
+            "third_party_privacy",
+            "minors",
+            "romantic_sexual_boundary",
+            "faith_afterlife_boundary",
+            "politics_current_events_boundary",
+            "correction_apology"
+          ]
+        },
+        "priority": {
+          "enum": [
+            "critical",
+            "high",
+            "normal",
+            "low"
+          ]
+        },
+        "trigger_intents": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "must_include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "must_not_include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "preferred_style_atom_ids": {
+          "$ref": "#/$defs/RefList"
+        },
+        "example_response": {
+          "type": "string"
+        },
+        "applies_to_audiences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "review_state": {
+          "enum": [
+            "unreviewed",
+            "approved",
+            "approved_limited",
+            "rejected"
+          ]
+        }
+      }
+    },
+    "ReadinessAssessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assessment_id",
+        "package_id",
+        "assessed_at",
+        "tier",
+        "modality_readiness"
+      ],
+      "properties": {
+        "assessment_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "assessed_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "tier": {
+          "enum": [
+            "tier_0_archive_preserved",
+            "tier_1_reviewed_record",
+            "tier_2_text_echo",
+            "tier_3_style_text_echo",
+            "tier_4_relationship_scoped_text",
+            "tier_5_private_voice",
+            "tier_6_visual_likeness",
+            "tier_7_video_avatar",
+            "tier_8_deployment_ready"
+          ]
+        },
+        "modality_readiness": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status",
+              "evidence",
+              "gaps"
+            ],
+            "properties": {
+              "status": {
+                "type": "boolean"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "gaps": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "ReviewQueueItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_item_id",
+        "package_id",
+        "item_type",
+        "item_id",
+        "review_reason",
+        "priority",
+        "status"
+      ],
+      "properties": {
+        "review_item_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "item_type": {
+          "enum": [
+            "artifact",
+            "derivative",
+            "atom",
+            "consent",
+            "authority_claim",
+            "manifest",
+            "deployment"
+          ]
+        },
+        "item_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "review_reason": {
+          "enum": [
+            "high_presence_voice",
+            "third_party_privacy",
+            "minor_present",
+            "sensitive_topic",
+            "disputed_authority",
+            "low_confidence_extraction",
+            "life_stage_likeness",
+            "family_testimony_first_person"
+          ]
+        },
+        "priority": {
+          "enum": [
+            "critical",
+            "high",
+            "normal",
+            "low"
+          ]
+        },
+        "assigned_to_agent_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "approved",
+            "approved_limited",
+            "rejected",
+            "escalated",
+            "quarantined"
+          ]
+        }
+      }
+    },
+    "ReviewDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_id",
+        "review_item_id",
+        "reviewer_agent_id",
+        "decision",
+        "allowed_operations",
+        "denied_operations",
+        "decided_at"
+      ],
+      "properties": {
+        "decision_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "review_item_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "reviewer_agent_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "decision": {
+          "enum": [
+            "approve",
+            "approve_limited",
+            "reject",
+            "quarantine",
+            "request_more_info"
+          ]
+        },
+        "allowed_operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Operation"
+          }
+        },
+        "denied_operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Operation"
+          }
+        },
+        "notes": {
+          "type": "string"
+        },
+        "decided_at": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      }
+    },
+    "DatasetManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_id",
+        "package_id",
+        "package_version",
+        "manifest_type",
+        "policy_resolution_snapshot_id",
+        "included_items",
+        "excluded_items",
+        "readiness_snapshot_id",
+        "created_at"
+      ],
+      "properties": {
+        "manifest_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_version": {
+          "type": "string"
+        },
+        "manifest_type": {
+          "enum": [
+            "text_training",
+            "voice_training",
+            "image_training",
+            "video_training",
+            "retrieval_memory",
+            "guardrail",
+            "evaluation",
+            "deployment"
+          ]
+        },
+        "policy_resolution_snapshot_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "included_items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "item_id",
+              "item_type",
+              "use",
+              "weight"
+            ],
+            "properties": {
+              "item_id": {
+                "$ref": "#/$defs/Id"
+              },
+              "item_type": {
+                "type": "string"
+              },
+              "use": {
+                "type": "string"
+              },
+              "weight": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "excluded_items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "item_id",
+              "reason"
+            ],
+            "properties": {
+              "item_id": {
+                "$ref": "#/$defs/Id"
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "readiness_snapshot_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      }
+    },
+    "ModelArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_artifact_id",
+        "package_id",
+        "model_type",
+        "storage_uri",
+        "created_from_manifest_id",
+        "allowed_operations",
+        "prohibited_operations",
+        "status"
+      ],
+      "properties": {
+        "model_artifact_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "model_type": {
+          "enum": [
+            "text",
+            "voice",
+            "image",
+            "video",
+            "multimodal",
+            "retrieval",
+            "guardrail_classifier"
+          ]
+        },
+        "storage_uri": {
+          "type": "string",
+          "pattern": "^(gs://|redacted://|artifact://|https://).+"
+        },
+        "created_from_manifest_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "allowed_audiences": {
+          "$ref": "#/$defs/RefList"
+        },
+        "allowed_operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Operation"
+          }
+        },
+        "prohibited_operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Operation"
+          }
+        },
+        "status": {
+          "enum": [
+            "active",
+            "suspended",
+            "deprecated",
+            "revoked"
+          ]
+        },
+        "evaluation_summary_id": {
+          "$ref": "#/$defs/Id"
+        }
+      }
+    },
+    "EvaluationCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "eval_case_id",
+        "package_id",
+        "case_type",
+        "input",
+        "expected_behavior",
+        "must_include",
+        "must_not_include",
+        "severity"
+      ],
+      "properties": {
+        "eval_case_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "case_type": {
+          "enum": [
+            "biographical_accuracy",
+            "style_match",
+            "boundary_adherence",
+            "relationship_scope",
+            "hallucination_resistance",
+            "crisis_redirect",
+            "privacy_leakage",
+            "source_taxonomy"
+          ]
+        },
+        "input": {
+          "type": "string"
+        },
+        "expected_behavior": {
+          "type": "string"
+        },
+        "must_include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "must_not_include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "audience_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "severity": {
+          "enum": [
+            "critical",
+            "high",
+            "normal",
+            "low"
+          ]
+        }
+      }
+    },
+    "RuntimeAnswerTrace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "answer_trace_id",
+        "session_id",
+        "package_id",
+        "audience_id",
+        "user_intent",
+        "retrieved_atom_ids",
+        "blocked_atom_ids",
+        "guardrails_applied",
+        "answer_policy_result",
+        "created_at"
+      ],
+      "properties": {
+        "answer_trace_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "session_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "audience_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "user_intent": {
+          "type": "string"
+        },
+        "retrieved_atom_ids": {
+          "$ref": "#/$defs/RefList"
+        },
+        "blocked_atom_ids": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "atom_id",
+              "reason"
+            ],
+            "properties": {
+              "atom_id": {
+                "$ref": "#/$defs/Id"
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "guardrails_applied": {
+          "$ref": "#/$defs/RefList"
+        },
+        "model_artifact_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "answer_policy_result": {
+          "enum": [
+            "allowed",
+            "blocked",
+            "redirected",
+            "requires_review"
+          ]
+        },
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      }
+    },
+    "RuntimePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequence",
+        "forbidden_defaults"
+      ],
+      "properties": {
+        "sequence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "forbidden_defaults": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "InterviewSession": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "interview_session_id"
+      ],
+      "properties": {}
+    },
+    "InterviewTurn": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "interview_turn_id"
+      ],
+      "properties": {}
+    },
+    "FacilitatedExercise": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "facilitated_exercise_id"
+      ],
+      "properties": {}
+    },
+    "CorrectionEvent": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "correction_event_id"
+      ],
+      "properties": {}
+    },
+    "RevocationEvent": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "revocation_event_id"
+      ],
+      "properties": {}
+    },
+    "ModelDeprecationEvent": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "model_deprecation_event_id"
+      ],
+      "properties": {}
+    },
+    "AuditEvent": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "audit_id"
+      ],
+      "properties": {}
+    }
+  }
+}

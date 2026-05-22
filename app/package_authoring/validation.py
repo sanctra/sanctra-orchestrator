@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import HTTPException
+from jsonschema import Draft202012Validator, FormatChecker
 
 SCHEMA_VERSION = "sanctra.async_memorial_package.v0"
 REQUIRED_COLLECTIONS = (
@@ -27,16 +28,65 @@ UUID_PATTERN = re.compile(
 ORCHESTRATION_MARKERS = ("paperclip", "openclaw", "issue:", "run:", "agent:", "PAPERCLIP_")
 VOICE_ARTIFACTS = {"voice_message"}
 VIDEO_ARTIFACTS = {"talking_head_clip"}
+HIGH_PRESENCE_ARTIFACTS = VOICE_ARTIFACTS | VIDEO_ARTIFACTS
 LIKNESS_USES = {"private_audio", "public_audio", "private_video", "public_video"}
 TEXT_USES = {"memorial_text", "memory_page"}
 REVIEW_STATES = {"not_required", "required_pending", "approved", "changes_requested", "rejected"}
 REVIEW_REQUIRED_TIERS = {"guided_consultant", "consultant", "high_trust", "consultant_high_trust"}
+PILOT_ADMIN_ROLES = {"pilot_admin"}
+PILOT_REVIEWER_ROLES = {"pilot_reviewer"}
+PILOT_READONLY_ROLES = {"pilot_operator_readonly"}
+PILOT_ALLOWED_ROLES = PILOT_ADMIN_ROLES | PILOT_REVIEWER_ROLES | PILOT_READONLY_ROLES
+BLOCKED_PILOT_STATUSES = {"approved", "delivered", "published", "released", "training", "trained"}
+BLOCKED_PROVIDER_KEYS = {
+    "provider_ref",
+    "provider_id",
+    "provider_job_ref",
+    "provider_job_id",
+    "model_ref",
+    "model_id",
+    "training_job_ref",
+    "training_job_id",
+    "publish_target_ref",
+    "publish_target_id",
+    "release_ref",
+    "release_id",
+}
 SCHEMA_PATH = Path(__file__).parent / "schema" / "async-memorial-package.schema.json"
+SUBJECT_DATASET_SCHEMA_VERSION = "sanctra.subject_dataset_package.v0.3"
+SUBJECT_DATASET_SCHEMA_PATH = Path(__file__).parent / "schema" / "subject-dataset-package.schema.json"
 
 
 def load_schema_contract() -> dict[str, Any]:
     with SCHEMA_PATH.open("r", encoding="utf-8") as fh:
         return json.load(fh)
+
+
+def validate_json_schema_contract(instance: dict[str, Any], schema_path: Path, *, label: str) -> None:
+    """Run Draft 2020-12 JSON Schema validation for runtime package contracts."""
+    with schema_path.open("r", encoding="utf-8") as fh:
+        schema = json.load(fh)
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    errors = sorted(validator.iter_errors(instance), key=lambda error: list(error.absolute_path))
+    if errors:
+        first = errors[0]
+        location = ".".join(str(part) for part in first.absolute_path) or "<root>"
+        raise_validation(f"{label} schema validation failed at {location}: {first.message}")
+
+
+def validate_subject_dataset_package(package: dict[str, Any]) -> dict[str, Any]:
+    """Validate the governed Subject Dataset Package v0.3 contract.
+
+    This is intentionally side-effect-free: it validates a submitted package
+    object but does not enqueue jobs, mutate storage, or call model providers.
+    """
+    if not isinstance(package, dict):
+        raise_validation("subject dataset package must be a JSON object")
+    if package.get("schema_version") != SUBJECT_DATASET_SCHEMA_VERSION:
+        raise_validation(f"schema_version must be {SUBJECT_DATASET_SCHEMA_VERSION}")
+    validate_json_schema_contract(package, SUBJECT_DATASET_SCHEMA_PATH, label="subject_dataset_package")
+    validate_ids_and_leakage(package)
+    return package
 
 
 def normalize_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
@@ -54,7 +104,7 @@ def normalize_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
 
 def validate_bundle(bundle: dict[str, Any], *, require_package: bool = True) -> dict[str, Any]:
     normalized = normalize_bundle(bundle)
-    load_schema_contract()  # Parse gate for vendored runtime contract.
+    validate_json_schema_contract(normalized, SCHEMA_PATH, label="async_memorial_package")
     if require_package and not normalized["memorial_packages"]:
         raise_validation("memorial_packages must include at least one package record")
     validate_ids_and_leakage(normalized)
@@ -174,14 +224,18 @@ def authority_preflight(bundle: dict[str, Any], artifact_type: str, requested_us
     return denied(*reasons)
 
 
-def validate_manifest_write(bundle: dict[str, Any], manifest: dict[str, Any]) -> dict[str, Any]:
+def validate_manifest_write(bundle: dict[str, Any], manifest: dict[str, Any], actor: dict[str, Any] | None = None) -> dict[str, Any]:
     if not isinstance(manifest, dict):
         raise_validation("manifest must be a JSON object")
+    manifest = dict(manifest)
+    manifest.pop("caller_metadata", None)
     manifest_id = manifest.get("manifest_id")
     if not isinstance(manifest_id, str) or not ID_PATTERN.match(manifest_id):
         raise_validation("manifest_id must be a stable Sanctra id")
+    actor = actor or {}
+    role = _actor_role(actor)
     artifact_type = manifest.get("artifact_type")
-    if artifact_type in VOICE_ARTIFACTS | VIDEO_ARTIFACTS:
+    if artifact_type in HIGH_PRESENCE_ARTIFACTS:
         authority_refs = manifest.get("authority_record_refs") or []
         if not authority_refs:
             raise_validation("voice/video manifests require authority_record_refs")
@@ -193,17 +247,22 @@ def validate_manifest_write(bundle: dict[str, Any], manifest: dict[str, Any]) ->
         missing = [ref for ref in authority_refs if ref not in allowed_refs]
         if missing:
             raise HTTPException(status_code=403, detail=f"authority gate denies manifest refs: {missing}")
-    review = normalize_manifest_review_metadata(bundle, manifest)
+
+    _enforce_pilot_role_guard(manifest, role)
+    _enforce_pilot_lockouts(manifest)
+
+    review = normalize_manifest_review_metadata(bundle, manifest, role)
     if review:
-        manifest = dict(manifest)
         manifest["human_review"] = review
+    manifest["audit_metadata"] = _build_audit_metadata(manifest, actor, role)
+
     if artifact_type in VOICE_ARTIFACTS and manifest.get("artifact_status") in {"approved", "delivered"} and not manifest.get("mastering_report_uri"):
         raise HTTPException(status_code=403, detail="voice artifacts require mastering_report_uri before approval or delivery")
     validate_ids_and_leakage(manifest, "manifest")
     return manifest
 
 
-def normalize_manifest_review_metadata(bundle: dict[str, Any], manifest: dict[str, Any]) -> dict[str, Any] | None:
+def normalize_manifest_review_metadata(bundle: dict[str, Any], manifest: dict[str, Any], role: str | None) -> dict[str, Any] | None:
     """Validate generic human-review metadata at the artifact manifest boundary.
 
     Sanctra package tiers decide when review is required. The shared voice lane only
@@ -226,6 +285,8 @@ def normalize_manifest_review_metadata(bundle: dict[str, Any], manifest: dict[st
         raise HTTPException(status_code=403, detail="consultant/high-trust voice artifacts require human review")
     if state != "not_required" and not review_required:
         raise_validation("human_review.review_required must be true unless state is not_required")
+    if review_required and role not in PILOT_ADMIN_ROLES | PILOT_REVIEWER_ROLES:
+        raise HTTPException(status_code=403, detail="pilot reviewer or pilot admin role required for review mutations")
 
     normalized = {
         "review_required": review_required,
@@ -244,6 +305,8 @@ def normalize_manifest_review_metadata(bundle: dict[str, Any], manifest: dict[st
             raise_validation(f"human_review.{key} must contain non-empty string refs")
 
     if state in {"approved", "changes_requested", "rejected"}:
+        if role not in PILOT_ADMIN_ROLES | PILOT_REVIEWER_ROLES:
+            raise HTTPException(status_code=403, detail="pilot reviewer or pilot admin role required for terminal review decisions")
         if not isinstance(normalized["reviewer_ref"], str) or not ID_PATTERN.match(normalized["reviewer_ref"]):
             raise_validation("human_review.reviewer_ref is required for terminal review decisions")
         if not isinstance(normalized["decided_at"], str) or not normalized["decided_at"].strip():
@@ -257,6 +320,8 @@ def normalize_manifest_review_metadata(bundle: dict[str, Any], manifest: dict[st
         raise HTTPException(status_code=403, detail="caller-facing delivery is blocked until human_review.state is approved")
     if state in {"changes_requested", "rejected"} and manifest.get("artifact_status") in {"approved", "delivered"}:
         raise HTTPException(status_code=403, detail="changes_requested/rejected artifacts cannot be approved or delivered")
+    if manifest.get("artifact_status") in {"approved", "delivered"} and manifest.get("artifact_type") in HIGH_PRESENCE_ARTIFACTS and role not in PILOT_ADMIN_ROLES:
+        raise HTTPException(status_code=403, detail="pilot admin confirmation is required before high-presence artifacts can be approved or delivered")
     if review_required or review:
         return normalized
     return None
@@ -269,6 +334,49 @@ def _package_requires_review(bundle: dict[str, Any], package_ref: Any) -> bool:
         tier_values = {package.get("tier"), package.get("trust_tier"), package.get("delivery_tier")}
         return any(isinstance(tier, str) and tier in REVIEW_REQUIRED_TIERS for tier in tier_values)
     return False
+
+
+def _actor_role(actor: dict[str, Any]) -> str | None:
+    role = actor.get("role")
+    return role if isinstance(role, str) and role else None
+
+
+def _enforce_pilot_role_guard(manifest: dict[str, Any], role: str | None) -> None:
+    if role not in PILOT_ALLOWED_ROLES:
+        raise HTTPException(status_code=403, detail="pilot lane access is restricted to pilot_admin, pilot_reviewer, or pilot_operator_readonly")
+    if role in PILOT_READONLY_ROLES:
+        raise HTTPException(status_code=403, detail="pilot_operator_readonly cannot mutate pilot manifests")
+
+
+def _enforce_pilot_lockouts(manifest: dict[str, Any]) -> None:
+    if manifest.get("artifact_status") in BLOCKED_PILOT_STATUSES:
+        # approved/delivered are conditionally allowed later after role/review checks
+        if manifest.get("artifact_status") in {"approved", "delivered"}:
+            pass
+        else:
+            raise HTTPException(status_code=403, detail="provider, training, publish, and release actions are hard-disabled in the guided-curation pilot lane")
+    for key in BLOCKED_PROVIDER_KEYS:
+        if manifest.get(key):
+            raise HTTPException(status_code=403, detail=f"{key} is hard-disabled in the guided-curation pilot lane")
+
+
+def _build_audit_metadata(manifest: dict[str, Any], actor: dict[str, Any], role: str | None) -> dict[str, Any]:
+    review = manifest.get("human_review") or {}
+    return {
+        "actor_id": actor.get("actor_id") or actor.get("id") or "unknown_actor",
+        "actor_role": role or "unknown_role",
+        "lane": actor.get("lane") or "guided_curation_pilot",
+        "item_id": manifest.get("manifest_id"),
+        "source_id": manifest.get("package_ref"),
+        "authority_basis": actor.get("authority_basis") or "documented_authority_required",
+        "consent_scope": actor.get("consent_scope") or "private_review",
+        "audience_scope": actor.get("audience_scope") or "private_review",
+        "prior_state": actor.get("prior_state") or "unknown",
+        "new_state": manifest.get("artifact_status") or "planned",
+        "decision_reason": review.get("notes") or actor.get("decision_reason") or "pilot mutation",
+        "admin_confirmation_required": manifest.get("artifact_type") in HIGH_PRESENCE_ARTIFACTS,
+        "admin_confirmation_performed": role in PILOT_ADMIN_ROLES and manifest.get("artifact_status") in {"approved", "delivered"},
+    }
 
 
 def upsert_manifest(bundle: dict[str, Any], manifest: dict[str, Any]) -> dict[str, Any]:

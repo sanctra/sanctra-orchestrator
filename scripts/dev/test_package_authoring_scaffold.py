@@ -62,7 +62,31 @@ def main() -> None:
     manifest = deepcopy(bundle["artifact_manifests"][1])
     manifest["manifest_id"] = "manifest:runtime_private_voice_001"
     manifest["outputs"][0]["artifact_id"] = "artifact:runtime_private_voice_mp3_001"
-    written = assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": manifest}), 200)
+    reviewer_actor = {
+        "actor_id": "staff:reviewer_01",
+        "role": "pilot_reviewer",
+        "lane": "living_subject",
+        "authority_basis": "living_subject_consent",
+        "consent_scope": "private_review",
+        "audience_scope": "private_review",
+        "prior_state": "planned",
+    }
+    admin_actor = {
+        "actor_id": "staff:admin_01",
+        "role": "pilot_admin",
+        "lane": "living_subject",
+        "authority_basis": "living_subject_consent",
+        "consent_scope": "private_review",
+        "audience_scope": "private_review",
+        "prior_state": "review_required",
+    }
+    readonly_actor = {
+        "actor_id": "staff:readonly_01",
+        "role": "pilot_operator_readonly",
+    }
+
+    assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": manifest, "actor": readonly_actor}), 403)
+    written = assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": manifest, "actor": reviewer_actor}), 200)
     assert written == {"manifest_id": "manifest:runtime_private_voice_001", "artifact_status": "planned"}
 
     voice_request_id = "sanctra_voice_req_private_001"
@@ -292,7 +316,8 @@ def main() -> None:
         }
     )
     approved_delivery["mastering_report_uri"] = mastering_pass["mastering_report_uri"]
-    approved = assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": approved_delivery}), 200)
+    assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": approved_delivery, "actor": reviewer_actor}), 403)
+    approved = assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": approved_delivery, "actor": admin_actor}), 200)
     assert approved == {"manifest_id": "manifest:runtime_approved_delivery_001", "artifact_status": "delivered"}
 
     changes_requested = deepcopy(approved_delivery)
@@ -307,7 +332,7 @@ def main() -> None:
             "mastering_report_refs": ["mastering:private-message-clicks-001"],
         }
     )
-    assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": changes_requested}), 200)
+    assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": changes_requested, "actor": reviewer_actor}), 200)
 
     rejected_delivery = deepcopy(changes_requested)
     rejected_delivery["manifest_id"] = "manifest:runtime_rejected_delivery_001"

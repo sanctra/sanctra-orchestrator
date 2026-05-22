@@ -60,9 +60,9 @@ class PackageAuthoringService:
         bundle = self.get(package_id)["bundle"]
         return authority_preflight(bundle, artifact_type, requested_use, subject_ref)
 
-    def write_manifest(self, package_id: str, manifest: dict) -> dict:
+    def write_manifest(self, package_id: str, manifest: dict, actor: dict | None = None) -> dict:
         bundle = self.get(package_id)["bundle"]
-        validated_manifest = validate_manifest_write(bundle, manifest)
+        validated_manifest = validate_manifest_write(bundle, manifest, actor or {})
         updated = upsert_manifest(bundle, validated_manifest)
         self.store.write(package_id, updated)
         return {
@@ -93,7 +93,20 @@ class PackageAuthoringService:
     def import_voice_artifact_manifest(self, package_id: str, request_id: str, manifest: dict) -> dict:
         bundle = self.get(package_id)["bundle"]
         validated_voice_manifest = validate_voice_manifest_import(bundle, request_id, manifest)
-        validated_manifest = validate_manifest_write(bundle, validated_voice_manifest)
+        validated_manifest = validate_manifest_write(
+            bundle,
+            validated_voice_manifest,
+            {
+                "actor_id": "system:voice_artifact_import",
+                "role": "pilot_reviewer",
+                "lane": "guided_curation_pilot",
+                "authority_basis": "documented_authority_required",
+                "consent_scope": "private_review",
+                "audience_scope": "private_review",
+                "prior_state": "voice_artifact_request_submitted",
+                "decision_reason": "voice artifact manifest import",
+            },
+        )
         updated = upsert_manifest(bundle, validated_manifest)
         updated = mark_manifest_received(updated, request_id, validated_manifest["manifest_id"])
         self.store.write(package_id, updated)

@@ -27,6 +27,7 @@ class AuthorityPreflightResponse(BaseModel):
 
 class ArtifactManifestRequest(BaseModel):
     manifest: dict
+    actor: dict = Field(default_factory=dict)
 
 
 class VoiceArtifactSubmitRequest(BaseModel):

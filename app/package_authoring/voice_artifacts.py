@@ -253,7 +253,9 @@ def validate_voice_manifest_import(bundle: dict[str, Any], request_id: str, mani
             raise_validation("voice manifest consent metadata mismatch")
     if manifest.get("artifact_type") not in {None, "voice_message"}:
         raise_validation("voice manifest import only accepts voice_message artifacts")
-    return manifest
+    sanitized = dict(manifest)
+    sanitized.pop("caller_metadata", None)
+    return sanitized
 
 
 def mark_manifest_received(bundle: dict[str, Any], request_id: str, manifest_id: str) -> dict[str, Any]:
