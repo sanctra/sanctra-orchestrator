@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import re
+from copy import deepcopy
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -28,9 +30,66 @@ UUID_PATTERN = re.compile(
 ORCHESTRATION_MARKERS = ("paperclip", "openclaw", "issue:", "run:", "agent:", "PAPERCLIP_")
 VOICE_ARTIFACTS = {"voice_message"}
 VIDEO_ARTIFACTS = {"talking_head_clip"}
+IMAGE_ARTIFACTS = {"portrait_image"}
 HIGH_PRESENCE_ARTIFACTS = VOICE_ARTIFACTS | VIDEO_ARTIFACTS
 LIKNESS_USES = {"private_audio", "public_audio", "private_video", "public_video"}
 TEXT_USES = {"memorial_text", "memory_page"}
+PACKAGE_STATUSES = {
+    "draft",
+    "intake_pending",
+    "authority_review",
+    "source_review",
+    "artifact_production",
+    "family_review",
+    "approved",
+    "delivered",
+    "paused",
+    "revoked",
+    "takedown_requested",
+}
+TERMINAL_PACKAGE_STATUSES = {"revoked", "takedown_requested"}
+PACKAGE_STATUS_TRANSITIONS = {
+    "draft": {"intake_pending", "authority_review", "paused", "revoked"},
+    "intake_pending": {"authority_review", "source_review", "paused", "revoked"},
+    "authority_review": {"source_review", "paused", "revoked", "takedown_requested"},
+    "source_review": {"artifact_production", "paused", "revoked", "takedown_requested"},
+    "artifact_production": {"family_review", "paused", "revoked", "takedown_requested"},
+    "family_review": {"approved", "artifact_production", "paused", "revoked", "takedown_requested"},
+    "approved": {"delivered", "family_review", "paused", "revoked", "takedown_requested"},
+    "delivered": {"takedown_requested", "revoked"},
+    "paused": {"intake_pending", "authority_review", "source_review", "artifact_production", "family_review", "revoked"},
+    "revoked": set(),
+    "takedown_requested": {"revoked"},
+}
+ARTIFACT_FAMILY_BY_TYPE = {
+    "memorial_profile": "text",
+    "memory_page": "text",
+    "email_response": "text",
+    "letter": "text",
+    "story": "text",
+    "voice_message": "audio",
+    "portrait_image": "image",
+    "talking_head_clip": "video",
+    "consultant_closeout_packet": "text",
+}
+ARTIFACT_OUTPUT_CONTRACTS = {
+    "text": {"formats": ["text/markdown; charset=utf-8", "text/plain; charset=utf-8", "application/pdf"], "metadata_required": True},
+    "audio": {"formats": ["audio/wav", "audio/mpeg"], "hash_required": True, "manifest_hash_required": True},
+    "image": {"formats": ["image/png", "image/jpeg", "image/webp"], "model_dataset_refs_required": True},
+    "video": {"formats": ["video/mp4"], "codec": "H.264", "baseline": "1080p", "placeholder": True},
+}
+TIER_ENTITLEMENTS = {
+    "async_starter": {
+        "allowed_artifact_families": ["text"],
+        "consultant_white_glove": False,
+        "review_required": False,
+    },
+    "guided_consultant": {
+        "allowed_artifact_families": ["text", "audio", "image", "video"],
+        "consultant_white_glove": True,
+        "review_required": True,
+    },
+}
 REVIEW_STATES = {"not_required", "required_pending", "approved", "changes_requested", "rejected"}
 REVIEW_REQUIRED_TIERS = {"guided_consultant", "consultant", "high_trust", "consultant_high_trust"}
 PILOT_ADMIN_ROLES = {"pilot_admin"}
@@ -187,6 +246,11 @@ def validate_refs(bundle: dict[str, Any]) -> None:
             raise_validation("voice/video artifact manifests require authority_record_refs")
         for ref in manifest.get("authority_record_refs", []):
             require_ref(ids, ref, "artifact_manifests.authority_record_refs")
+        family = artifact_family(manifest)
+        entitlement = package_entitlement(bundle, manifest.get("package_ref"))
+        if family not in entitlement["allowed_artifact_families"]:
+            raise HTTPException(status_code=403, detail=f"{family} artifact is not entitled for package tier")
+        validate_artifact_output_contract(manifest, family)
 
 
 def authority_preflight(bundle: dict[str, Any], artifact_type: str, requested_use: str, subject_ref: str | None) -> dict[str, Any]:
@@ -222,6 +286,140 @@ def authority_preflight(bundle: dict[str, Any], artifact_type: str, requested_us
     reasons = [f"No accepted authority record allows {requested_use}{subject_msg}"]
     reasons.extend(blocked)
     return denied(*reasons)
+
+
+def package_entitlement(bundle: dict[str, Any], package_id: Any) -> dict[str, Any]:
+    package = next((item for item in bundle.get("memorial_packages", []) if item.get("package_id") == package_id), {})
+    tier = package.get("tier") or "async_starter"
+    base = deepcopy(TIER_ENTITLEMENTS.get(tier, TIER_ENTITLEMENTS["async_starter"]))
+    base["tier"] = tier
+    base["status"] = package.get("status", "draft")
+    base["blocked"] = package.get("status") in TERMINAL_PACKAGE_STATUSES
+    return base
+
+
+def artifact_family(manifest: dict[str, Any]) -> str:
+    return ARTIFACT_FAMILY_BY_TYPE.get(manifest.get("artifact_type"), "text")
+
+
+def validate_artifact_output_contract(manifest: dict[str, Any], family: str) -> None:
+    contract = ARTIFACT_OUTPUT_CONTRACTS[family]
+    outputs = manifest.get("outputs") or []
+    if family in {"text", "audio"} and not outputs:
+        raise_validation(f"{family} manifests require output references")
+    for output in outputs:
+        if output.get("format") not in contract["formats"]:
+            raise_validation(f"{family} output format must be one of {contract['formats']}")
+        if contract.get("hash_required") and not str(output.get("content_hash", "")).startswith("sha256:"):
+            raise_validation(f"{family} output content_hash must be a sha256 manifest hash reference")
+    if family == "audio" and not manifest.get("generation_refs"):
+        raise_validation("audio manifests require generation refs for manual/provider job traceability")
+    if family == "image":
+        kinds = {ref.get("kind") for ref in manifest.get("generation_refs", []) if isinstance(ref, dict)}
+        if not {"model_manifest", "dataset_manifest"}.issubset(kinds):
+            raise_validation("image manifests require model_manifest and dataset_manifest generation refs")
+    if family == "video":
+        for output in outputs:
+            media_contract = output.get("media_contract") or {}
+            if output.get("format") != "video/mp4":
+                raise_validation("video placeholder outputs must use video/mp4")
+            if media_contract.get("codec") != "H.264" or media_contract.get("baseline") != "1080p":
+                raise_validation("video placeholders must declare H.264 1080p baseline media_contract")
+
+
+def package_lifecycle_summary(bundle: dict[str, Any], package_id: str) -> dict[str, Any]:
+    package = next((item for item in bundle.get("memorial_packages", []) if item.get("package_id") == package_id), None)
+    if not package:
+        raise HTTPException(status_code=404, detail=f"unknown package {package_id}")
+    manifest_refs = set(package.get("artifact_manifest_refs", []))
+    manifests = [
+        manifest for manifest in bundle.get("artifact_manifests", []) if manifest.get("manifest_id") in manifest_refs
+    ]
+    entitlement = package_entitlement(bundle, package_id)
+    entitlement["families_present"] = sorted({artifact_family(manifest) for manifest in manifests})
+    return {
+        "package_id": package_id,
+        "status": package.get("status"),
+        "subject_ref": package.get("subject_ref"),
+        "consultant_white_glove": entitlement["consultant_white_glove"],
+        "entitlement": entitlement,
+        "artifact_refs": [
+            {
+                "manifest_id": manifest.get("manifest_id"),
+                "artifact_type": manifest.get("artifact_type"),
+                "artifact_family": artifact_family(manifest),
+                "artifact_status": manifest.get("artifact_status"),
+                "output_refs": [
+                    {
+                        "artifact_id": output.get("artifact_id"),
+                        "format": output.get("format"),
+                        "storage_uri": output.get("storage_uri"),
+                        "content_hash": output.get("content_hash"),
+                    }
+                    for output in manifest.get("outputs", [])
+                ],
+                "generation_refs": manifest.get("generation_refs", []),
+                "revocation_ref": manifest.get("revocation_ref"),
+                "retention_policy": manifest.get("retention_policy"),
+            }
+            for manifest in manifests
+        ],
+        "lifecycle_events": package.get("lifecycle_events", []),
+    }
+
+
+def transition_package_lifecycle(
+    bundle: dict[str, Any],
+    package_id: str,
+    status: str,
+    actor: dict[str, Any],
+    *,
+    reason: str = "",
+    revocation_ref: str | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    if status not in PACKAGE_STATUSES:
+        raise_validation(f"unsupported package status {status}")
+    updated = deepcopy(bundle)
+    package = next((item for item in updated.get("memorial_packages", []) if item.get("package_id") == package_id), None)
+    if not package:
+        raise HTTPException(status_code=404, detail=f"unknown package {package_id}")
+    prior = package.get("status", "draft")
+    if status != prior and status not in PACKAGE_STATUS_TRANSITIONS.get(prior, set()):
+        raise HTTPException(status_code=409, detail=f"invalid lifecycle transition {prior} -> {status}")
+    actor_id = actor.get("actor_id") or "system:package_lifecycle"
+    role = actor.get("role") or "pilot_admin"
+    now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    event = {
+        "event_id": f"lifecycle:{package_id.replace(':', '_')}:{status}:{len(package.get('lifecycle_events', [])) + 1}",
+        "from_status": prior,
+        "to_status": status,
+        "actor_id": actor_id,
+        "actor_role": role,
+        "reason": reason or f"package lifecycle moved to {status}",
+        "created_at": now,
+    }
+    if revocation_ref:
+        event["revocation_ref"] = revocation_ref
+    package["status"] = status
+    package["updated_at"] = now
+    package["entitlement"] = package_entitlement(updated, package_id)
+    package.setdefault("lifecycle_events", []).append(event)
+
+    if status in TERMINAL_PACKAGE_STATUSES:
+        target_artifact_status = "revoked" if status == "revoked" else "removed"
+        refs = set(package.get("artifact_manifest_refs", []))
+        for manifest in updated.get("artifact_manifests", []):
+            if manifest.get("manifest_id") not in refs:
+                continue
+            if manifest.get("artifact_status") not in {"revoked", "removed"}:
+                manifest["artifact_status"] = target_artifact_status
+                manifest["revocation_ref"] = revocation_ref or event["event_id"]
+                manifest["revoked_at"] = now
+                manifest["retention_policy"] = (
+                    "Retain only audit metadata and manifest hashes; remove generated media refs after revocation review."
+                )
+    validate_bundle(updated)
+    return updated, event
 
 
 def validate_manifest_write(bundle: dict[str, Any], manifest: dict[str, Any], actor: dict[str, Any] | None = None) -> dict[str, Any]:

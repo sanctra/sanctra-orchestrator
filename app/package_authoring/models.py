@@ -11,6 +11,13 @@ class PackageReplaceRequest(BaseModel):
     bundle: dict
 
 
+class PackageLifecycleUpdateRequest(BaseModel):
+    status: str
+    actor: dict = Field(default_factory=dict)
+    reason: str = ""
+    revocation_ref: str | None = None
+
+
 class AuthorityPreflightRequest(BaseModel):
     artifact_type: str
     requested_use: str

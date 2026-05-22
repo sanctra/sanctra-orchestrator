@@ -26,6 +26,13 @@ def assert_status(response, expected: int) -> dict:
 
 def main() -> None:
     bundle = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    for fixture_manifest in bundle["artifact_manifests"]:
+        if fixture_manifest["artifact_type"] == "talking_head_clip":
+            fixture_manifest["outputs"][0]["media_contract"] = {
+                "codec": "H.264",
+                "baseline": "1080p",
+                "notes": "Future video placeholder only; no render pipeline dependency.",
+            }
     package_id = bundle["memorial_packages"][0]["package_id"]
     client = TestClient(app)
 
@@ -59,6 +66,11 @@ def main() -> None:
     replaced = assert_status(client.put(f"/packages/{package_id}", json={"bundle": updated}), 200)
     assert replaced["status"] == "artifact_production"
 
+    status_summary = assert_status(client.get(f"/packages/{package_id}/status"), 200)
+    assert status_summary["consultant_white_glove"] is True
+    assert status_summary["entitlement"]["allowed_artifact_families"] == ["text", "audio", "image", "video"]
+    assert {"text", "audio", "video"}.issubset(set(status_summary["entitlement"]["families_present"]))
+
     manifest = deepcopy(bundle["artifact_manifests"][1])
     manifest["manifest_id"] = "manifest:runtime_private_voice_001"
     manifest["outputs"][0]["artifact_id"] = "artifact:runtime_private_voice_mp3_001"
@@ -88,6 +100,35 @@ def main() -> None:
     assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": manifest, "actor": readonly_actor}), 403)
     written = assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": manifest, "actor": reviewer_actor}), 200)
     assert written == {"manifest_id": "manifest:runtime_private_voice_001", "artifact_status": "planned"}
+
+    text_manifest = deepcopy(bundle["artifact_manifests"][0])
+    text_manifest["manifest_id"] = "manifest:runtime_utf8_story_001"
+    text_manifest["artifact_type"] = "story"
+    text_manifest["outputs"][0] = {
+        "artifact_id": "artifact:runtime_utf8_story_text_001",
+        "format": "text/plain; charset=utf-8",
+        "storage_uri": "sanctra-storage://packages/maria-ellis/deliverables/story-v1.txt",
+        "content_hash": "sha256:runtime-story-hash",
+        "duration_or_size": "900 words",
+    }
+    assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": text_manifest, "actor": reviewer_actor}), 200)
+
+    image_manifest = deepcopy(bundle["artifact_manifests"][0])
+    image_manifest["manifest_id"] = "manifest:runtime_portrait_image_001"
+    image_manifest["artifact_type"] = "portrait_image"
+    image_manifest["generation_refs"] = [
+        {"kind": "model_manifest", "ref": "manifest:image_model_portrait_v0"},
+        {"kind": "dataset_manifest", "ref": "manifest:dataset_curated_portrait_v0"},
+        {"kind": "operator_note", "ref": "consultant-note:portrait-art-direction-private"},
+    ]
+    image_manifest["outputs"][0] = {
+        "artifact_id": "artifact:runtime_portrait_image_png_001",
+        "format": "image/png",
+        "storage_uri": "sanctra-storage://packages/maria-ellis/deliverables/portrait-v1.png",
+        "content_hash": "sha256:runtime-portrait-image-hash",
+        "duration_or_size": "2048x2048",
+    }
+    assert_status(client.post(f"/packages/{package_id}/artifact-manifests", json={"manifest": image_manifest, "actor": reviewer_actor}), 200)
 
     voice_request_id = "sanctra_voice_req_private_001"
     voice_request = {
@@ -485,6 +526,24 @@ def main() -> None:
     assert {"source:prompt_response_care_message_text_001", "source:archive_teacher_letter_001"}.issubset(
         {item["source_id"] for item in inventory_items}
     )
+
+    revoked = assert_status(
+        client.patch(
+            f"/packages/{package_id}/lifecycle",
+            json={
+                "status": "revoked",
+                "actor": admin_actor,
+                "reason": "Family requested takedown after review.",
+                "revocation_ref": "review:family_takedown_001",
+            },
+        ),
+        200,
+    )
+    assert revoked["status"] == "revoked"
+    revoked_summary = assert_status(client.get(f"/packages/{package_id}/status"), 200)
+    assert revoked_summary["entitlement"]["blocked"] is True
+    assert {item["artifact_status"] for item in revoked_summary["artifact_refs"]} == {"revoked"}
+    assert all(item["revocation_ref"] == "review:family_takedown_001" for item in revoked_summary["artifact_refs"])
 
     bad = deepcopy(bundle)
     bad["memorial_subjects"][0]["public_bio"] = "Paperclip issue 3230430e-9ed0-4be8-a1ca-c98b6672a9bf leaked"

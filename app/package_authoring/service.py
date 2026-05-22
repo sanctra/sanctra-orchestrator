@@ -6,6 +6,8 @@ from .store import PackageStore
 from .validation import (
     authority_preflight,
     package_id_from_bundle,
+    package_lifecycle_summary,
+    transition_package_lifecycle,
     upsert_manifest,
     validate_bundle,
     validate_manifest_write,
@@ -55,6 +57,25 @@ class PackageAuthoringService:
             raise HTTPException(status_code=409, detail="package_id mismatch")
         self.store.write(package_id, validated)
         return self.response(package_id, validated)
+
+    def status(self, package_id: str) -> dict:
+        bundle = self.get(package_id)["bundle"]
+        return package_lifecycle_summary(bundle, package_id)
+
+    def update_lifecycle(
+        self, package_id: str, status: str, actor: dict | None = None, reason: str = "", revocation_ref: str | None = None
+    ) -> dict:
+        bundle = self.get(package_id)["bundle"]
+        updated, lifecycle_event = transition_package_lifecycle(
+            bundle,
+            package_id,
+            status,
+            actor or {},
+            reason=reason,
+            revocation_ref=revocation_ref,
+        )
+        self.store.write(package_id, updated)
+        return {"package_id": package_id, "status": status, "lifecycle_event": lifecycle_event}
 
     def preflight(self, package_id: str, artifact_type: str, requested_use: str, subject_ref: str | None) -> dict:
         bundle = self.get(package_id)["bundle"]

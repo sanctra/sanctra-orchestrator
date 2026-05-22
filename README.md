@@ -29,6 +29,8 @@ make push
 - POST /packages
 - GET  /packages/{package_id}
 - PUT  /packages/{package_id}
+- GET  /packages/{package_id}/status
+- PATCH /packages/{package_id}/lifecycle
 - POST /packages/{package_id}/authority-preflight
 - POST /packages/{package_id}/artifact-manifests
 
@@ -42,3 +44,11 @@ make push
 ## Async package authoring scaffold
 
 The `/packages` endpoints provide the first consultant-led async memorial package authoring seam. Package bundles use Sanctra-native ids, are stored as JSON under `SANCTRA_PACKAGE_STORE_DIR` (default: system temp outside the source repo), and keep generated media/model artifacts as external storage references only. Voice/video artifact preflight requires accepted or limited authority records for the requested likeness use.
+
+The backend lifecycle spine is intentionally non-media-pipeline-specific:
+
+- Package state moves through `draft`, intake/review/production states, `approved`, `delivered`, `paused`, `takedown_requested`, and `revoked`.
+- `GET /packages/{package_id}/status` returns package status, consultant white-glove entitlement, artifact manifest refs, generation refs, output refs, retention policy, and revocation refs.
+- `PATCH /packages/{package_id}/lifecycle` records a lifecycle event and, for `revoked` or `takedown_requested`, marks package artifact manifests `revoked` or `removed` while retaining manifest hashes and audit refs.
+- Tier entitlement is checked before storing manifests: `async_starter` is text-only; `guided_consultant` supports text, audio, image, and future video with consultant review.
+- Artifact references stay as governed manifests, not embedded generated media. Text outputs must declare UTF-8 text or PDF metadata, audio outputs must use WAV/MP3 refs with `sha256:` hashes, image outputs require `model_manifest` and `dataset_manifest` refs, and future video placeholders must declare `video/mp4` with an H.264 1080p media contract.

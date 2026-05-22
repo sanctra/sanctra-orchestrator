@@ -11,6 +11,7 @@ from app.package_authoring.models import (
     LaneAPromptSessionRequest,
     LaneBArchiveIntakeRequest,
     PackageCreateRequest,
+    PackageLifecycleUpdateRequest,
     PackageReplaceRequest,
     VoiceArtifactManifestImportRequest,
     VoiceArtifactMasteringReportRequest,
@@ -38,6 +39,22 @@ def get_package(package_id: str) -> dict:
 @router.put("/packages/{package_id}")
 def replace_package(package_id: str, request: PackageReplaceRequest) -> dict:
     return service().replace(package_id, request.bundle)
+
+
+@router.get("/packages/{package_id}/status")
+def get_package_status(package_id: str) -> dict:
+    return service().status(package_id)
+
+
+@router.patch("/packages/{package_id}/lifecycle")
+def update_package_lifecycle(package_id: str, request: PackageLifecycleUpdateRequest) -> dict:
+    return service().update_lifecycle(
+        package_id,
+        request.status,
+        request.actor,
+        reason=request.reason,
+        revocation_ref=request.revocation_ref,
+    )
 
 
 @router.post("/packages/{package_id}/authority-preflight", response_model=AuthorityPreflightResponse)

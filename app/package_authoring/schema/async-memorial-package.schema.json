@@ -4,42 +4,1177 @@
   "title": "Sanctra Async Memorial Package Bundle",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "memorial_subjects", "stakeholders", "authority_records", "source_inventories", "quality_gates", "review_decisions", "artifact_manifests", "closeout_instructions", "memorial_packages"],
+  "required": [
+    "schema_version",
+    "memorial_subjects",
+    "stakeholders",
+    "authority_records",
+    "source_inventories",
+    "quality_gates",
+    "review_decisions",
+    "artifact_manifests",
+    "closeout_instructions",
+    "memorial_packages"
+  ],
   "properties": {
-    "schema_version": { "const": "sanctra.async_memorial_package.v0" },
-    "memorial_subjects": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/MemorialSubject" } },
-    "stakeholders": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/StakeholderRole" } },
-    "authority_records": { "type": "array", "items": { "$ref": "#/$defs/AuthorityRecord" } },
-    "source_inventories": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/SourceInventory" } },
-    "quality_gates": { "type": "array", "items": { "$ref": "#/$defs/DatasetQualityGate" } },
-    "review_decisions": { "type": "array", "items": { "$ref": "#/$defs/ReviewDecision" } },
-    "artifact_manifests": { "type": "array", "items": { "$ref": "#/$defs/ArtifactManifest" } },
-    "closeout_instructions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/CloseoutInstruction" } },
-    "memorial_packages": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/MemorialPackage" } },
-    "voice_artifact_requests": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
-    "mastering_reports": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
-    "lane_a_prompt_sessions": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
-    "lane_a_prompt_responses": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
-    "lane_b_archive_intakes": { "type": "array", "items": { "type": "object", "additionalProperties": true } }
+    "schema_version": {
+      "const": "sanctra.async_memorial_package.v0"
+    },
+    "memorial_subjects": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/MemorialSubject"
+      }
+    },
+    "stakeholders": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/StakeholderRole"
+      }
+    },
+    "authority_records": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/AuthorityRecord"
+      }
+    },
+    "source_inventories": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/SourceInventory"
+      }
+    },
+    "quality_gates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/DatasetQualityGate"
+      }
+    },
+    "review_decisions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ReviewDecision"
+      }
+    },
+    "artifact_manifests": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ArtifactManifest"
+      }
+    },
+    "closeout_instructions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/CloseoutInstruction"
+      }
+    },
+    "memorial_packages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/MemorialPackage"
+      }
+    },
+    "voice_artifact_requests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "mastering_reports": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "lane_a_prompt_sessions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "lane_a_prompt_responses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "lane_b_archive_intakes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    }
   },
   "$defs": {
-    "Id": { "type": "string", "pattern": "^[a-z][a-z0-9_:-]{2,127}$" },
-    "Ref": { "type": "string", "pattern": "^[a-z][a-z0-9_:-]{2,127}$" },
-    "Timestamp": { "type": "string", "format": "date-time" },
-    "MemorialSubject": { "type": "object", "additionalProperties": false, "required": ["subject_id", "display_name", "relationship_context", "persona_scope", "disclosure_label"], "properties": { "subject_id": { "$ref": "#/$defs/Id" }, "display_name": { "type": "string", "minLength": 1 }, "relationship_context": { "type": "string", "minLength": 1 }, "life_dates": { "type": "string" }, "public_bio": { "type": "string" }, "sensitivity_notes": { "type": "string" }, "persona_scope": { "enum": ["text_only", "text_and_audio", "text_audio_video"] }, "disclosure_label": { "type": "string", "minLength": 1 } } },
-    "StakeholderRole": { "type": "object", "additionalProperties": false, "required": ["stakeholder_id", "role", "relationship_to_subject", "authority_scope"], "properties": { "stakeholder_id": { "$ref": "#/$defs/Id" }, "role": { "enum": ["requester", "family_authorizer", "uploader", "reviewer", "approver", "recipient", "consultant", "expressive_arts_therapist", "funeral_home_contact"] }, "relationship_to_subject": { "type": "string", "minLength": 1 }, "contact_ref": { "type": "string" }, "authority_scope": { "type": "array", "minItems": 1, "items": { "enum": ["submit_sources", "approve_sources", "approve_text", "approve_voice", "approve_video", "receive_delivery", "request_edit", "request_takedown"] } }, "notes": { "type": "string" } } },
-    "AuthorityRecord": { "type": "object", "additionalProperties": false, "required": ["authority_id", "subject_ref", "stakeholder_ref", "basis", "allowed_uses", "prohibited_uses", "source_refs", "status", "revocation_terms"], "properties": { "authority_id": { "$ref": "#/$defs/Id" }, "subject_ref": { "$ref": "#/$defs/Ref" }, "stakeholder_ref": { "$ref": "#/$defs/Ref" }, "basis": { "enum": ["living_subject_consent", "next_of_kin_authorization", "estate_executor_authorization", "documented_family_authorization", "other_documented_basis"] }, "allowed_uses": { "type": "array", "items": { "enum": ["memorial_text", "memory_page", "private_audio", "public_audio", "private_video", "public_video", "training_dataset", "funeral_home_delivery"] } }, "prohibited_uses": { "type": "array", "items": { "type": "string", "minLength": 1 } }, "source_refs": { "type": "array", "items": { "$ref": "#/$defs/Ref" } }, "status": { "enum": ["pending", "accepted", "limited", "rejected", "revoked", "expired"] }, "valid_from": { "type": "string" }, "valid_until": { "type": "string" }, "revocation_terms": { "type": "string", "minLength": 1 }, "reviewed_by": { "$ref": "#/$defs/Ref" }, "reviewed_at": { "$ref": "#/$defs/Timestamp" } } },
-    "SourceInventory": { "type": "object", "additionalProperties": false, "required": ["inventory_id", "package_ref", "items"], "properties": { "inventory_id": { "$ref": "#/$defs/Id" }, "package_ref": { "$ref": "#/$defs/Ref" }, "source_set_hash": { "type": "string" }, "items": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/SourceItem" } } } },
-    "SourceItem": { "type": "object", "additionalProperties": false, "required": ["source_id", "kind", "storage_uri_or_path", "submitted_by", "provenance_notes", "subject_coverage", "rights_notes", "sensitivity_level", "quality_notes", "usable_for", "exclude_from", "retention_policy"], "properties": { "source_id": { "$ref": "#/$defs/Id" }, "kind": { "enum": ["text", "document", "photo", "audio", "video", "interview_note", "transcript", "metadata"] }, "storage_uri_or_path": { "type": "string", "minLength": 1 }, "submitted_by": { "$ref": "#/$defs/Ref" }, "provenance_notes": { "type": "string", "minLength": 1 }, "subject_coverage": { "type": "string", "minLength": 1 }, "rights_notes": { "type": "string", "minLength": 1 }, "sensitivity_level": { "enum": ["low", "moderate", "high", "restricted"] }, "quality_notes": { "type": "string", "minLength": 1 }, "usable_for": { "type": "array", "items": { "type": "string" } }, "exclude_from": { "type": "array", "items": { "type": "string" } }, "retention_policy": { "type": "string", "minLength": 1 }, "lineage": { "type": "object", "additionalProperties": true } } },
-    "DatasetQualityGate": { "type": "object", "additionalProperties": false, "required": ["gate_id", "package_ref", "scope", "inputs", "checks", "decision", "decided_by", "decided_at"], "properties": { "gate_id": { "$ref": "#/$defs/Id" }, "package_ref": { "$ref": "#/$defs/Ref" }, "scope": { "enum": ["text_memory", "image_memory", "voice_clone", "video_avatar", "delivery_packet"] }, "inputs": { "type": "array", "items": { "$ref": "#/$defs/Ref" } }, "checks": { "type": "array", "items": { "$ref": "#/$defs/GateCheck" } }, "decision": { "enum": ["approved", "approved_with_limits", "rejected", "needs_more_source", "needs_family_review"] }, "decided_by": { "$ref": "#/$defs/Ref" }, "decided_at": { "$ref": "#/$defs/Timestamp" } } },
-    "GateCheck": { "type": "object", "additionalProperties": false, "required": ["check_id", "name", "status", "reviewer_notes"], "properties": { "check_id": { "$ref": "#/$defs/Id" }, "name": { "type": "string", "minLength": 1 }, "status": { "enum": ["pass", "warn", "fail", "not_applicable"] }, "evidence_ref": { "type": "string" }, "reviewer_notes": { "type": "string", "minLength": 1 } } },
-    "ReviewDecision": { "type": "object", "additionalProperties": false, "required": ["decision_id", "package_ref", "artifact_or_source_ref", "review_stage", "decision", "requested_changes", "reviewer_ref", "decided_at", "notes"], "properties": { "decision_id": { "$ref": "#/$defs/Id" }, "package_ref": { "$ref": "#/$defs/Ref" }, "artifact_or_source_ref": { "$ref": "#/$defs/Ref" }, "review_stage": { "enum": ["consultant_intake", "authority_review", "source_quality", "draft_artifact", "family_review", "delivery_closeout"] }, "decision": { "enum": ["approve", "request_changes", "reject", "pause", "revoke"] }, "requested_changes": { "type": "array", "items": { "type": "string" } }, "reviewer_ref": { "$ref": "#/$defs/Ref" }, "decided_at": { "$ref": "#/$defs/Timestamp" }, "notes": { "type": "string", "minLength": 1 } } },
-    "HumanReview": { "type": "object", "additionalProperties": false, "required": ["review_required", "state", "quality_gate_refs", "qa_report_refs", "mastering_report_refs", "review_decision_refs"], "properties": { "review_required": { "type": "boolean" }, "state": { "enum": ["not_required", "required_pending", "approved", "changes_requested", "rejected"] }, "reviewer_ref": { "anyOf": [{ "$ref": "#/$defs/Ref" }, { "type": "null" }] }, "reviewer_identity_ref": { "type": ["string", "null"] }, "decided_at": { "anyOf": [{ "$ref": "#/$defs/Timestamp" }, { "type": "null" }] }, "notes": { "type": "string" }, "quality_gate_refs": { "type": "array", "items": { "$ref": "#/$defs/Ref" } }, "qa_report_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } }, "mastering_report_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } }, "review_decision_refs": { "type": "array", "items": { "$ref": "#/$defs/Ref" } } } },
-    "AuditMetadata": { "type": "object", "additionalProperties": false, "required": ["actor_id", "actor_role", "lane", "item_id", "source_id", "authority_basis", "consent_scope", "audience_scope", "prior_state", "new_state", "decision_reason", "admin_confirmation_required", "admin_confirmation_performed"], "properties": { "actor_id": { "type": "string", "minLength": 1 }, "actor_role": { "type": "string", "minLength": 1 }, "lane": { "type": "string", "minLength": 1 }, "item_id": { "$ref": "#/$defs/Ref" }, "source_id": { "$ref": "#/$defs/Ref" }, "authority_basis": { "type": "string", "minLength": 1 }, "consent_scope": { "type": "string", "minLength": 1 }, "audience_scope": { "type": "string", "minLength": 1 }, "prior_state": { "type": "string", "minLength": 1 }, "new_state": { "type": "string", "minLength": 1 }, "decision_reason": { "type": "string", "minLength": 1 }, "admin_confirmation_required": { "type": "boolean" }, "admin_confirmation_performed": { "type": "boolean" } } },
-    "ArtifactManifest": { "type": "object", "additionalProperties": false, "required": ["manifest_id", "package_ref", "artifact_type", "artifact_status", "inputs", "generation_refs", "outputs", "authority_record_refs", "disclosure_label", "quality_gate_refs", "review_decision_refs", "retention_policy", "created_at", "updated_at"], "properties": { "manifest_id": { "$ref": "#/$defs/Id" }, "package_ref": { "$ref": "#/$defs/Ref" }, "artifact_type": { "enum": ["memorial_profile", "memory_page", "email_response", "letter", "story", "voice_message", "talking_head_clip", "consultant_closeout_packet"] }, "artifact_status": { "enum": ["planned", "generated", "reviewed", "approved", "delivered", "revoked", "removed"] }, "inputs": { "type": "array", "items": { "$ref": "#/$defs/Ref" } }, "generation_refs": { "type": "array", "items": { "$ref": "#/$defs/GenerationRef" } }, "outputs": { "type": "array", "items": { "$ref": "#/$defs/ArtifactOutput" } }, "authority_record_refs": { "type": "array", "items": { "$ref": "#/$defs/Ref" } }, "disclosure_label": { "type": "string", "minLength": 1 }, "quality_gate_refs": { "type": "array", "items": { "$ref": "#/$defs/Ref" } }, "review_decision_refs": { "type": "array", "items": { "$ref": "#/$defs/Ref" } }, "human_review": { "$ref": "#/$defs/HumanReview" }, "audit_metadata": { "$ref": "#/$defs/AuditMetadata" }, "mastering_report_uri": { "type": "string", "minLength": 1 }, "retention_policy": { "type": "string", "minLength": 1 }, "created_at": { "$ref": "#/$defs/Timestamp" }, "updated_at": { "$ref": "#/$defs/Timestamp" } } },
-    "GenerationRef": { "type": "object", "additionalProperties": false, "required": ["kind", "ref"], "properties": { "kind": { "enum": ["storage_job", "voice_persona", "voice_job", "render_job", "script", "prompt", "model_manifest", "operator_note"] }, "ref": { "type": "string", "minLength": 1 } } },
-    "ArtifactOutput": { "type": "object", "additionalProperties": false, "required": ["artifact_id", "format", "storage_uri", "content_hash"], "properties": { "artifact_id": { "$ref": "#/$defs/Id" }, "format": { "type": "string", "minLength": 1 }, "storage_uri": { "type": "string", "minLength": 1 }, "content_hash": { "type": "string", "minLength": 1 }, "duration_or_size": { "type": "string" }, "thumbnail_ref": { "type": "string" } } },
-    "CloseoutInstruction": { "type": "object", "additionalProperties": false, "required": ["closeout_id", "package_ref", "delivery_recipients", "delivery_channels", "editable_fields", "takedown_contacts", "revocation_process", "retention_policy", "future_use_permissions", "consultant_notes"], "properties": { "closeout_id": { "$ref": "#/$defs/Id" }, "package_ref": { "$ref": "#/$defs/Ref" }, "delivery_recipients": { "type": "array", "items": { "$ref": "#/$defs/Ref" } }, "delivery_channels": { "type": "array", "items": { "type": "string", "minLength": 1 } }, "editable_fields": { "type": "array", "items": { "type": "string", "minLength": 1 } }, "takedown_contacts": { "type": "array", "items": { "$ref": "#/$defs/Ref" } }, "revocation_process": { "type": "string", "minLength": 1 }, "retention_policy": { "type": "string", "minLength": 1 }, "future_use_permissions": { "type": "string", "minLength": 1 }, "consultant_notes": { "type": "string", "minLength": 1 } } },
-    "MemorialPackage": { "type": "object", "additionalProperties": false, "required": ["package_id", "tier", "status", "subject_ref", "stakeholder_refs", "authority_record_refs", "source_inventory_ref", "quality_gate_refs", "artifact_manifest_refs", "closeout_instruction_ref", "created_at", "updated_at"], "properties": { "package_id": { "$ref": "#/$defs/Id" }, "tier": { "enum": ["async_starter", "guided_consultant"] }, "status": { "enum": ["draft", "intake_pending", "authority_review", "source_review", "artifact_production", "family_review", "approved", "delivered", "paused", "revoked", "takedown_requested"] }, "subject_ref": { "$ref": "#/$defs/Ref" }, "stakeholder_refs": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Ref" } }, "authority_record_refs": { "type": "array", "items": { "$ref": "#/$defs/Ref" } }, "source_inventory_ref": { "$ref": "#/$defs/Ref" }, "quality_gate_refs": { "type": "array", "items": { "$ref": "#/$defs/Ref" } }, "artifact_manifest_refs": { "type": "array", "items": { "$ref": "#/$defs/Ref" } }, "closeout_instruction_ref": { "$ref": "#/$defs/Ref" }, "created_at": { "$ref": "#/$defs/Timestamp" }, "updated_at": { "$ref": "#/$defs/Timestamp" } } }
+    "Id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_:-]{2,127}$"
+    },
+    "Ref": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_:-]{2,127}$"
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "MemorialSubject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject_id",
+        "display_name",
+        "relationship_context",
+        "persona_scope",
+        "disclosure_label"
+      ],
+      "properties": {
+        "subject_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relationship_context": {
+          "type": "string",
+          "minLength": 1
+        },
+        "life_dates": {
+          "type": "string"
+        },
+        "public_bio": {
+          "type": "string"
+        },
+        "sensitivity_notes": {
+          "type": "string"
+        },
+        "persona_scope": {
+          "enum": [
+            "text_only",
+            "text_and_audio",
+            "text_audio_video"
+          ]
+        },
+        "disclosure_label": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "StakeholderRole": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stakeholder_id",
+        "role",
+        "relationship_to_subject",
+        "authority_scope"
+      ],
+      "properties": {
+        "stakeholder_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "role": {
+          "enum": [
+            "requester",
+            "family_authorizer",
+            "uploader",
+            "reviewer",
+            "approver",
+            "recipient",
+            "consultant",
+            "expressive_arts_therapist",
+            "funeral_home_contact"
+          ]
+        },
+        "relationship_to_subject": {
+          "type": "string",
+          "minLength": 1
+        },
+        "contact_ref": {
+          "type": "string"
+        },
+        "authority_scope": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "submit_sources",
+              "approve_sources",
+              "approve_text",
+              "approve_voice",
+              "approve_video",
+              "receive_delivery",
+              "request_edit",
+              "request_takedown"
+            ]
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "AuthorityRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authority_id",
+        "subject_ref",
+        "stakeholder_ref",
+        "basis",
+        "allowed_uses",
+        "prohibited_uses",
+        "source_refs",
+        "status",
+        "revocation_terms"
+      ],
+      "properties": {
+        "authority_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "subject_ref": {
+          "$ref": "#/$defs/Ref"
+        },
+        "stakeholder_ref": {
+          "$ref": "#/$defs/Ref"
+        },
+        "basis": {
+          "enum": [
+            "living_subject_consent",
+            "next_of_kin_authorization",
+            "estate_executor_authorization",
+            "documented_family_authorization",
+            "other_documented_basis"
+          ]
+        },
+        "allowed_uses": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "memorial_text",
+              "memory_page",
+              "private_audio",
+              "public_audio",
+              "private_video",
+              "public_video",
+              "training_dataset",
+              "funeral_home_delivery"
+            ]
+          }
+        },
+        "prohibited_uses": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ref"
+          }
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "accepted",
+            "limited",
+            "rejected",
+            "revoked",
+            "expired"
+          ]
+        },
+        "valid_from": {
+          "type": "string"
+        },
+        "valid_until": {
+          "type": "string"
+        },
+        "revocation_terms": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewed_by": {
+          "$ref": "#/$defs/Ref"
+        },
+        "reviewed_at": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      }
+    },
+    "SourceInventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inventory_id",
+        "package_ref",
+        "items"
+      ],
+      "properties": {
+        "inventory_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_ref": {
+          "$ref": "#/$defs/Ref"
+        },
+        "source_set_hash": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/SourceItem"
+          }
+        }
+      }
+    },
+    "SourceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "kind",
+        "storage_uri_or_path",
+        "submitted_by",
+        "provenance_notes",
+        "subject_coverage",
+        "rights_notes",
+        "sensitivity_level",
+        "quality_notes",
+        "usable_for",
+        "exclude_from",
+        "retention_policy"
+      ],
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "kind": {
+          "enum": [
+            "text",
+            "document",
+            "photo",
+            "audio",
+            "video",
+            "interview_note",
+            "transcript",
+            "metadata"
+          ]
+        },
+        "storage_uri_or_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "submitted_by": {
+          "$ref": "#/$defs/Ref"
+        },
+        "provenance_notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subject_coverage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rights_notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sensitivity_level": {
+          "enum": [
+            "low",
+            "moderate",
+            "high",
+            "restricted"
+          ]
+        },
+        "quality_notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "usable_for": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclude_from": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "retention_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lineage": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "DatasetQualityGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gate_id",
+        "package_ref",
+        "scope",
+        "inputs",
+        "checks",
+        "decision",
+        "decided_by",
+        "decided_at"
+      ],
+      "properties": {
+        "gate_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_ref": {
+          "$ref": "#/$defs/Ref"
+        },
+        "scope": {
+          "enum": [
+            "text_memory",
+            "image_memory",
+            "voice_clone",
+            "video_avatar",
+            "delivery_packet"
+          ]
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ref"
+          }
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/GateCheck"
+          }
+        },
+        "decision": {
+          "enum": [
+            "approved",
+            "approved_with_limits",
+            "rejected",
+            "needs_more_source",
+            "needs_family_review"
+          ]
+        },
+        "decided_by": {
+          "$ref": "#/$defs/Ref"
+        },
+        "decided_at": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      }
+    },
+    "GateCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "check_id",
+        "name",
+        "status",
+        "reviewer_notes"
+      ],
+      "properties": {
+        "check_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "warn",
+            "fail",
+            "not_applicable"
+          ]
+        },
+        "evidence_ref": {
+          "type": "string"
+        },
+        "reviewer_notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "ReviewDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_id",
+        "package_ref",
+        "artifact_or_source_ref",
+        "review_stage",
+        "decision",
+        "requested_changes",
+        "reviewer_ref",
+        "decided_at",
+        "notes"
+      ],
+      "properties": {
+        "decision_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_ref": {
+          "$ref": "#/$defs/Ref"
+        },
+        "artifact_or_source_ref": {
+          "$ref": "#/$defs/Ref"
+        },
+        "review_stage": {
+          "enum": [
+            "consultant_intake",
+            "authority_review",
+            "source_quality",
+            "draft_artifact",
+            "family_review",
+            "delivery_closeout"
+          ]
+        },
+        "decision": {
+          "enum": [
+            "approve",
+            "request_changes",
+            "reject",
+            "pause",
+            "revoke"
+          ]
+        },
+        "requested_changes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reviewer_ref": {
+          "$ref": "#/$defs/Ref"
+        },
+        "decided_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "HumanReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_required",
+        "state",
+        "quality_gate_refs",
+        "qa_report_refs",
+        "mastering_report_refs",
+        "review_decision_refs"
+      ],
+      "properties": {
+        "review_required": {
+          "type": "boolean"
+        },
+        "state": {
+          "enum": [
+            "not_required",
+            "required_pending",
+            "approved",
+            "changes_requested",
+            "rejected"
+          ]
+        },
+        "reviewer_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reviewer_identity_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "decided_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "quality_gate_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ref"
+          }
+        },
+        "qa_report_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "mastering_report_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "review_decision_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ref"
+          }
+        }
+      }
+    },
+    "AuditMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actor_id",
+        "actor_role",
+        "lane",
+        "item_id",
+        "source_id",
+        "authority_basis",
+        "consent_scope",
+        "audience_scope",
+        "prior_state",
+        "new_state",
+        "decision_reason",
+        "admin_confirmation_required",
+        "admin_confirmation_performed"
+      ],
+      "properties": {
+        "actor_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actor_role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lane": {
+          "type": "string",
+          "minLength": 1
+        },
+        "item_id": {
+          "$ref": "#/$defs/Ref"
+        },
+        "source_id": {
+          "$ref": "#/$defs/Ref"
+        },
+        "authority_basis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consent_scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "audience_scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prior_state": {
+          "type": "string",
+          "minLength": 1
+        },
+        "new_state": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "admin_confirmation_required": {
+          "type": "boolean"
+        },
+        "admin_confirmation_performed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ArtifactManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_id",
+        "package_ref",
+        "artifact_type",
+        "artifact_status",
+        "inputs",
+        "generation_refs",
+        "outputs",
+        "authority_record_refs",
+        "disclosure_label",
+        "quality_gate_refs",
+        "review_decision_refs",
+        "retention_policy",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "manifest_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_ref": {
+          "$ref": "#/$defs/Ref"
+        },
+        "artifact_type": {
+          "enum": [
+            "memorial_profile",
+            "memory_page",
+            "email_response",
+            "letter",
+            "story",
+            "voice_message",
+            "talking_head_clip",
+            "consultant_closeout_packet",
+            "portrait_image"
+          ]
+        },
+        "artifact_status": {
+          "enum": [
+            "planned",
+            "generated",
+            "reviewed",
+            "approved",
+            "delivered",
+            "revoked",
+            "removed"
+          ]
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ref"
+          }
+        },
+        "generation_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/GenerationRef"
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ArtifactOutput"
+          }
+        },
+        "authority_record_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ref"
+          }
+        },
+        "disclosure_label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "quality_gate_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ref"
+          }
+        },
+        "review_decision_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ref"
+          }
+        },
+        "human_review": {
+          "$ref": "#/$defs/HumanReview"
+        },
+        "audit_metadata": {
+          "$ref": "#/$defs/AuditMetadata"
+        },
+        "mastering_report_uri": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retention_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "revocation_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revoked_at": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      }
+    },
+    "GenerationRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "ref"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "storage_job",
+            "voice_persona",
+            "voice_job",
+            "render_job",
+            "script",
+            "prompt",
+            "model_manifest",
+            "operator_note",
+            "dataset_manifest"
+          ]
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "ArtifactOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "format",
+        "storage_uri",
+        "content_hash"
+      ],
+      "properties": {
+        "artifact_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "format": {
+          "type": "string",
+          "minLength": 1
+        },
+        "storage_uri": {
+          "type": "string",
+          "minLength": 1
+        },
+        "content_hash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "duration_or_size": {
+          "type": "string"
+        },
+        "thumbnail_ref": {
+          "type": "string"
+        },
+        "media_contract": {
+          "$ref": "#/$defs/MediaContract"
+        }
+      }
+    },
+    "CloseoutInstruction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "closeout_id",
+        "package_ref",
+        "delivery_recipients",
+        "delivery_channels",
+        "editable_fields",
+        "takedown_contacts",
+        "revocation_process",
+        "retention_policy",
+        "future_use_permissions",
+        "consultant_notes"
+      ],
+      "properties": {
+        "closeout_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "package_ref": {
+          "$ref": "#/$defs/Ref"
+        },
+        "delivery_recipients": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ref"
+          }
+        },
+        "delivery_channels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "editable_fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "takedown_contacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ref"
+          }
+        },
+        "revocation_process": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retention_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "future_use_permissions": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consultant_notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "MemorialPackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "package_id",
+        "tier",
+        "status",
+        "subject_ref",
+        "stakeholder_refs",
+        "authority_record_refs",
+        "source_inventory_ref",
+        "quality_gate_refs",
+        "artifact_manifest_refs",
+        "closeout_instruction_ref",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "package_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "tier": {
+          "enum": [
+            "async_starter",
+            "guided_consultant"
+          ]
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "intake_pending",
+            "authority_review",
+            "source_review",
+            "artifact_production",
+            "family_review",
+            "approved",
+            "delivered",
+            "paused",
+            "revoked",
+            "takedown_requested"
+          ]
+        },
+        "subject_ref": {
+          "$ref": "#/$defs/Ref"
+        },
+        "stakeholder_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Ref"
+          }
+        },
+        "authority_record_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ref"
+          }
+        },
+        "source_inventory_ref": {
+          "$ref": "#/$defs/Ref"
+        },
+        "quality_gate_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ref"
+          }
+        },
+        "artifact_manifest_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ref"
+          }
+        },
+        "closeout_instruction_ref": {
+          "$ref": "#/$defs/Ref"
+        },
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "entitlement": {
+          "$ref": "#/$defs/EntitlementSnapshot"
+        },
+        "lifecycle_events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LifecycleEvent"
+          }
+        }
+      }
+    },
+    "LifecycleEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "from_status",
+        "to_status",
+        "actor_id",
+        "actor_role",
+        "reason",
+        "created_at"
+      ],
+      "properties": {
+        "event_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "from_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "to_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actor_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actor_role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revocation_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      }
+    },
+    "EntitlementSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "status",
+        "allowed_artifact_families",
+        "consultant_white_glove",
+        "review_required",
+        "blocked"
+      ],
+      "properties": {
+        "tier": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "allowed_artifact_families": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "text",
+              "audio",
+              "image",
+              "video"
+            ]
+          }
+        },
+        "consultant_white_glove": {
+          "type": "boolean"
+        },
+        "review_required": {
+          "type": "boolean"
+        },
+        "blocked": {
+          "type": "boolean"
+        }
+      }
+    },
+    "MediaContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "codec": {
+          "type": "string",
+          "minLength": 1
+        },
+        "baseline": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
   }
 }
